@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6) 
+cmake_minimum_required(VERSION 2.8.12)
 project(conversion)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -11,7 +11,7 @@ if (NOT LIBIGL_FOUND)
 endif()
 
 if (NOT LIBDIRECTIONAL_FOUND)
-   message(FATAL_ERROR "libDIRECTIONAL not found --- You can download it in https://github.com/samonum/libdirectional.git")
+   message(FATAL_ERROR "libdirectional not found --- You can download it in https://github.com/samonum/libdirectional.git")
 endif()
 
 # Compilation flags: adapt to your needs 
@@ -24,9 +24,8 @@ else()
   # Libigl requires a modern C++ compiler that supports c++11
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "." )
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 endif()
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 # libigl options: choose between header only and compiled static library
 # Header-only is preferred for small projects. For larger projects the static build
@@ -69,7 +68,7 @@ message("libigl extra sources: ${LIBIGL_EXTRA_SOURCES}")
 message("libigl extra libraries: ${LIBIGL_EXTRA_LIBRARIES}")
 message("libigl definitions: ${LIBIGL_DEFINITIONS}")
 
-message("libdirectional includes: ${LIBDIRECTIONAL_INCLUDE_DIRS}")
+message("libhedra includes: ${LIBDIRECTIONAL_INCLUDE_DIRS}")
 
 # Prepare the build environment
 include_directories(${LIBIGL_INCLUDE_DIRS})

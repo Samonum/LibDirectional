@@ -10,30 +10,7 @@
 
 namespace directional
 {
-
-#include <igl/per_face_normals.h>
-
-
-
-	// Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. The output is the modification to the parallel transport.
-	// Inputs:
-	//  V: #V X 3 vertex coordinates.
-	//  F: #F by 3 face vertex indices.
-	//  representative: #F by 3 coordinates of representative vectors.
-	//  N: the degree of the field.
-	// Outputs:
-	//  raw: #F by 3*N matrix with all N explicit vectors of each directional.
-	IGL_INLINE void representative_to_raw(const Eigen::MatrixXd& V,
-		const Eigen::MatrixXi& F,
-		const Eigen::MatrixXd& representative,
-		Eigen::MatrixXd& raw,
-		const int N)
-	{
-		Eigen::MatrixXd norm;
-		igl::per_face_normals(V, F, norm);
-	}
-
-	// Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. The output is the modification to the parallel transport.
+	// Computes the raw vector field given a set of representative vectors.
 	// Inputs:
 	//  norm: #F by 3 coordinates of the normals of each face.
 	//  representative: #F by 3 coordinates of representative vectors.
@@ -55,10 +32,29 @@ namespace directional
 				norm.row(i)).toRotationMatrix();
 			std::cout << rot << std::endl;
 			for (int j = 1; j < N; j++)
-				raw.block<1, 3>(i, j*3) << (rot*raw.block<1, 3>(i, (j -1)* 3).transpose()).transpose();
+				raw.block<1, 3>(i, j * 3) << (rot*raw.block<1, 3>(i, (j - 1) * 3).transpose()).transpose();
 		}
 	}
 
+	// Computes the raw vector field given a set of representative vectors.
+	// This version recalculates the face normals every time it's called.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  representative: #F by 3 coordinates of representative vectors.
+	//  N: the degree of the field.
+	// Outputs:
+	//  raw: #F by 3*N matrix with all N explicit vectors of each directional.
+	IGL_INLINE void representative_to_raw(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXd& representative,
+		Eigen::MatrixXd& raw,
+		const int N)
+	{
+		Eigen::MatrixXd norm;
+		igl::per_face_normals(V, F, norm);
+		representative_to_raw(norm, representative, raw, N);
+	}
 }
 
 #endif

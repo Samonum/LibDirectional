@@ -1,7 +1,7 @@
 #include <iostream>
 #include <directional/representative_to_raw.h>
 #include <Eigen/Core>
-#include <Eigen/Geometry> 
+
 
 Eigen::MatrixXi F;
 Eigen::MatrixXd V, norm(5,3), representative(5,3), raw;
