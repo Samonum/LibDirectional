@@ -30,7 +30,6 @@ namespace directional
 
 			Eigen::MatrixXd rot = Eigen::AngleAxisd(2. / N*igl::PI,
 				norm.row(i)).toRotationMatrix();
-			std::cout << rot << std::endl;
 			for (int j = 1; j < N; j++)
 				raw.block<1, 3>(i, j * 3) << (rot*raw.block<1, 3>(i, (j - 1) * 3).transpose()).transpose();
 		}
