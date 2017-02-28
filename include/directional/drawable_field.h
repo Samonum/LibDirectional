@@ -8,6 +8,7 @@
 #include <directional/line_cylinders.h>
 #include <Eigen/Core>
 
+
 namespace directional
 {
 	void IGL_INLINE drawable_field(const Eigen::MatrixXd &V, 
