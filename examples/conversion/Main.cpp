@@ -51,7 +51,6 @@ int main()
 	std::cout << "raw: " << std::endl;
 	std::cout << raw << std::endl;
 
-	std::cin.get();
 	igl::viewer::Viewer viewer;
 	//viewer.callback_key_down = &key_down;
 	UpdateCurrentView(viewer);
