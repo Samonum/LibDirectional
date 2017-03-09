@@ -26,7 +26,7 @@ namespace directional
 	//  N: the degree of the field
 	//  globalRotation: The angle between the vector on the first face and its basis in radians
 	// Outputs:
-	//  vectorSetField: #F x 3*N of vector arranged in xyzxyzxyz...xyz per row, and within the tangent space (supporting plane) of the respetive face. They are also N-Rosy: unit norm and rotationally-symmetric
+	//  representative: #F x 3 representative vectors within the tangent space (supporting plane) of the respetive face.
 
 	IGL_INLINE void adjustment_to_representative(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,

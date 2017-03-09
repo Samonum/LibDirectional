@@ -1,6 +1,6 @@
 # libdirectional
 
-### representative_to_raw
+## representative_to_raw
 
 #### IGL_INLINE void representative_to_raw(const Eigen::MatrixXd& norm, const Eigen::MatrixXd& representative, Eigen::MatrixXd& raw, const int N)
 Computes the raw vector field given a set of representative vectors.
