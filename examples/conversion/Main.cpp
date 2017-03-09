@@ -52,7 +52,7 @@ int main()
 	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
 
 	igl::local_basis(meshV, meshF, B1, B2, B3);
-	directional::drawable_field(meshV, meshF, B1, 3, Eigen::RowVector3d(0, 0, 1), fieldV, fieldF, fieldC);
+	directional::drawable_field(meshV, meshF, B1, Eigen::RowVector3d(0, 0, 1), N, false,  fieldV, fieldF, fieldC);
 	ConcatMeshes(meshV, meshF, fieldV, fieldF, V, F);
 	C.resize(F.rows(), 3);
 	C << meshC, fieldC;
