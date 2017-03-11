@@ -49,7 +49,7 @@ namespace directional
 		vectorColors.resize(F.rows() * N, 3);
 		
 		if (field.cols() == 3)
-			representative_to_raw(normals, field, rawField, N);
+			representative_to_raw(normals, field, N, rawField);
 		else
 			rawField = field;
 

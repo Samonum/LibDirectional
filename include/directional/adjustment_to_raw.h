@@ -30,7 +30,7 @@ namespace directional
 	{
 		Eigen::MatrixXd representative;
 		adjustment_to_representative(V, F, EV, EF, adjustAngles, N, globalRotation, representative);
-		representative_to_raw(norm, representative, raw, N);
+		representative_to_raw(norm, representative, N, raw);
 	}
 }
 

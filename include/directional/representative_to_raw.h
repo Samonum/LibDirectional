@@ -19,8 +19,8 @@ namespace directional
 	//  raw: #F by 3*N matrix with all N explicit vectors of each directional.
 	IGL_INLINE void representative_to_raw(const Eigen::MatrixXd& norm,
 		const Eigen::MatrixXd& representative,
-		Eigen::MatrixXd& raw,
-		const int N)
+		const int N,
+		Eigen::MatrixXd& raw)
 	{
 		raw.resize(representative.rows(), 3 * N);
 
@@ -47,12 +47,12 @@ namespace directional
 	IGL_INLINE void representative_to_raw(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXd& representative,
-		Eigen::MatrixXd& raw,
-		const int N)
+		const int N,
+		Eigen::MatrixXd& raw)
 	{
 		Eigen::MatrixXd norm;
 		igl::per_face_normals(V, F, norm);
-		representative_to_raw(norm, representative, raw, N);
+		representative_to_raw(norm, representative, N, raw);
 	}
 }
 
