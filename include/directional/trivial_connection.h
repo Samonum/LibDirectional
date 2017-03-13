@@ -14,11 +14,7 @@
 
 
 namespace directional
-{
-    
-    
-
-    
+{    
     // Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. The output is the modification to the parallel transport.
     // Inputs:
     //  V: #V X 3 vertex coordinates
@@ -26,8 +22,8 @@ namespace directional
     //  EF: #E X 2 edges 2 faces indices
     //  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
     //  the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
-    //  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
     //  indices: #basisCycles the index around each cycle. They should add up to N*Euler_characteristic of the mesh.
+    //  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
     // Outputs:
     //  adjustAngles: the difference between the parallel transport and the modified one.
     //TODO: work with boundaries

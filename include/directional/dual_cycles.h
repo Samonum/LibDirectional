@@ -51,7 +51,7 @@ namespace directional
         
         VectorXi /*primalTreeEdges,*/ primalTreeFathers;
         VectorXi /*dualTreeEdges, */dualTreeFathers;
-        igl::tree(EV, primalTreeEdges, primalTreeFathers);
+        tree(EV, primalTreeEdges, primalTreeFathers);
         //creating a set of dual edges that do not cross edges in the primal tree
         VectorXi fullIndices=VectorXi::LinSpaced(EV.rows(), 0, EV.rows()-1);
         VectorXi reducedEFIndices, inFullIndices;
@@ -67,7 +67,7 @@ namespace directional
         
         //std::cout<<"faceExist.sum(): "<<faceExist.sum()<<std::endl;
         
-        igl::tree(reducedEF, dualTreeEdges, dualTreeFathers);
+        tree(reducedEF, dualTreeEdges, dualTreeFathers);
         //checking for repetitive things
         VectorXi usedEdges=VectorXi::Zero(reducedEF.rows());
         for (int i=0;i<dualTreeEdges.size();i++)
@@ -126,7 +126,7 @@ namespace directional
             numCycle++;
             
             //only putting in dual edges that are below the LCA
-            for (int i=0;i<candidateTriplets.size();i++)
+            for (size_t i=0;i<candidateTriplets.size();i++)
                 if (visitedOnce(candidateTriplets[i].col()))
                     basisCycleTriplets.push_back(candidateTriplets[i]);
                     

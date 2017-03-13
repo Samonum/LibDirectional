@@ -11,7 +11,7 @@
 #include <queue>
 
 
-namespace igl
+namespace directional
 {
     // create a tree from a graph given by the edges in EV
     // the graph should be connected. That means that EV.minCoeff()=0 and EV.maxCoeff=|V|
