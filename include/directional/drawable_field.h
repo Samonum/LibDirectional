@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include <igl/avg_edge_length.h>
 
+
 namespace directional
 {
 	// Returns a list of faces, vertices and colour values that can be used to draw a vector field on a mesh.
@@ -48,7 +49,7 @@ namespace directional
 		vectorColors.resize(F.rows() * N, 3);
 		
 		if (field.cols() == 3)
-			representative_to_raw(normals, field, rawField, N);
+			representative_to_raw(normals, field, N, rawField);
 		else
 			rawField = field;
 
