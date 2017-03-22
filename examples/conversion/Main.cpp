@@ -7,6 +7,7 @@
 #include <directional/trivial_connection.h>
 #include <directional/adjustment_to_raw.h>
 #include <directional/representative_to_adjustment.h>
+#include <directional/point_spheres.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -15,12 +16,23 @@
 #include "Main.h"
 
 
-Eigen::MatrixXi F, fieldF, meshF, EV, FE, EF;
-Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, norm, representative, raw, B1, B2, B3;
+Eigen::MatrixXi F, fieldF, meshF, singF, EV, FE, EF;
+Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, norm, representative, raw, B1, B2, B3;
 Eigen::VectorXd adjustmentField, other;
-Eigen::VectorXi match;
+Eigen::VectorXi match; 
+Eigen::VectorXi indices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 bool mode = true;
+
+// define the format you want, you only need one instance of this...
+const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
+
+void writeToCSVfile(std::string name, Eigen::MatrixXd matrix)
+{
+	std::ofstream file(name.c_str());
+	file << matrix.format(CSVFormat);
+}
+
 
 int N = 3;
 
@@ -42,9 +54,17 @@ void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::MatrixXd &raw)
 	raw.rowwise().normalize();
 	directional::drawable_field(meshV, meshF, raw, color, N, false, fieldV, fieldF, fieldC);
 
-	ConcatMeshes(meshV, meshF, fieldV, fieldF, V, F);
+	Eigen::MatrixXd spheres;
+	spheres.resize(2, 3);
+	spheres << meshV.row(30), meshV.row(90);
+	directional::point_spheres(spheres, .008, Eigen::RowVector3d(1, 0, 0).replicate(2, 1), 10, false, singV, singF, singC);
+	Eigen::MatrixXd a;
+	Eigen::MatrixXi b;
+	ConcatMeshes(meshV, meshF, fieldV, fieldF, a, b);
+	ConcatMeshes(a, b, singV, singF, V, F);
+
 	C.resize(F.rows(), 3);
-	C << meshC, fieldC;
+	C << meshC, fieldC, singC;
 
 	viewer.data.set_mesh(V, F);
 	viewer.data.set_colors(C);
@@ -79,17 +99,20 @@ int main()
 {
 	igl::viewer::Viewer viewer;
 	viewer.callback_key_down = &key_down;
-	igl::readOBJ("../../data/spherers.obj", meshV, meshF);
+	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
 	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
 
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
 	igl::per_face_normals(meshV, meshF, norm);
 
-	directional::dual_cycles(meshF, EV, EF, cycles);
-	Eigen::VectorXi indices = Eigen::VectorXi::Zero(cycles.rows());
+	directional::dual_cycles(meshV, meshF, EV, EF, cycles);
+	std::cout << cycles.row(meshV.rows()) << std::endl;
+	std::cout << cycles.row(meshV.rows() + 1) << std::endl;
+	indices = Eigen::VectorXi::Zero(cycles.rows());
 
-	indices(0) = N;
-	indices(40) = N;
+	//writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
+	indices(30) = N;
+	indices(90) = N;
 	
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField);
 

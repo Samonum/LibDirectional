@@ -8,6 +8,7 @@
 #include <igl/igl_inline.h>
 #include <igl/gaussian_curvature.h>
 #include <igl/local_basis.h>
+#include <igl/parallel_transport_angles.h>
 #include <Eigen/Core>
 #include <vector>
 #include <cmath>
@@ -45,8 +46,15 @@ namespace directional
         MatrixXd B1, B2, B3;
         igl::local_basis(V, F, B1, B2, B3);
         VectorXd edgeParallelAngleChange(EF.rows());  //the difference in the angle representation of edge i from EF(i,0) to EF(i,1)
-        MatrixXd edgeVectors(EF.rows(),3);
+		MatrixXd edgeVectors(EF.rows(),3);
+
+		// Same as igl::parallel_transport_angles?
         for (int i=0;i<EF.rows();i++){
+			if (EF(i, 0) == -1 || EF(i, 1) == -1)
+			{
+				edgeParallelAngleChange(i) = 0;
+				continue;
+			}
             edgeVectors.row(i)=(V.row(EV(i,1))-V.row(EV(i,0))).normalized();
             double x1=edgeVectors.row(i).dot(B1.row(EF(i,0)));
             double y1=edgeVectors.row(i).dot(B2.row(EF(i,0)));
@@ -83,7 +91,9 @@ namespace directional
         
         //x = A' * ((A*A')\ b);
         SimplicialLDLT<SparseMatrix<double> > solver;
-        solver.compute(basisCycles*basisCycles.transpose());
+
+		SparseMatrix<double> bbt = basisCycles*basisCycles.transpose();
+        solver.compute(bbt);
         adjustAngles=basisCycles.transpose()*solver.solve((-cycleHolonomy+cycleNewCurvature));
         
         std::cout<<"Error of adjustment angles computation: "<<(basisCycles*adjustAngles-(-cycleHolonomy+cycleNewCurvature)).lpNorm<Infinity>()<<std::endl;

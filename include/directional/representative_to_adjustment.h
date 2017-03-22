@@ -58,6 +58,8 @@ namespace directional
 
 		for (int i = 0; i < EF.rows(); i++)
 		{
+			if (EF(i, 0) == -1 || EF(i, 1) == -1)
+				continue;
 			adjustAngles(i) = local(EF(i,0)) - local(EF(i,1)) -parallel(i);
 			matching(i) =(int)(adjustAngles(i) / (2*igl::PI / N));
 			adjustAngles(i) -= (2 * igl::PI / N) * matching(i);

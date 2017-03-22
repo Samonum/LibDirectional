@@ -47,6 +47,8 @@ namespace directional
 		igl::local_basis(V, F, B1, B2, B3);
 		for (int i = 0; i<EF.rows(); i++) {
 			for (int j = 0; j<2; j++) {
+				if (EF(i, j) == -1)
+					continue;
 				VectorXd edgeVector = (V.row(EV(i, 1)) - V.row(EV(i, 0))).normalized();
 				edgeRep(i, j) = pow(Complex(edgeVector.dot(B1.row(EF(i, j))), edgeVector.dot(B2.row(EF(i, j)))), (double)N);
 			}
@@ -56,11 +58,14 @@ namespace directional
 		SparseMatrix<Complex> aP1(EF.rows(), F.rows() - 1);
 		vector<Triplet<Complex> > aP1Triplets, aP1FullTriplets;
 		for (int i = 0; i<EF.rows(); i++) {
+			if (EF(i, 0) == -1 || EF(i, 1) == -1)
+				continue;
+
 			aP1FullTriplets.push_back(Triplet<Complex>(i, EF(i, 0), conj(edgeRep(i, 0))*exp(Complex(0, (double)N*adjustAngles(i)))));
 			aP1FullTriplets.push_back(Triplet<Complex>(i, EF(i, 1), -conj(edgeRep(i, 1))));
 			if (EF(i, 0) != 0)
 				aP1Triplets.push_back(Triplet<Complex>(i, EF(i, 0) - 1, conj(edgeRep(i, 0))*exp(Complex(0, (double)N*adjustAngles(i)))));
-			if (EF(i, 1) != 0)
+			if (EF(i, 1) != 0) 
 				aP1Triplets.push_back(Triplet<Complex>(i, EF(i, 1) - 1, -conj(edgeRep(i, 1))));
 		}
 		aP1Full.setFromTriplets(aP1FullTriplets.begin(), aP1FullTriplets.end());
