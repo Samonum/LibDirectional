@@ -34,7 +34,6 @@ namespace directional
                                 Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat
                                 )
     {
-		Eigen::VectorXi primalTreeEdges, dualTreeEdges;
         using namespace Eigen;
         int numV=F.maxCoeff()+1;
         int eulerCharacteristic=numV-EV.rows()+F.rows();
@@ -123,6 +122,7 @@ namespace directional
 			basisCycleMat.setFromTriplets(basisCycleTriplets.begin(), basisCycleTriplets.end());
 			return;
 		}
+		Eigen::VectorXi primalTreeEdges, dualTreeEdges;
         VectorXi /*primalTreeEdges,*/ primalTreeFathers;
         VectorXi /*dualTreeEdges, */dualTreeFathers;
         tree(EV, primalTreeEdges, primalTreeFathers);
@@ -133,19 +133,19 @@ namespace directional
         igl::setdiff(fullIndices,primalTreeEdges,reducedEFIndices,inFullIndices);
         VectorXi Two=VectorXi::LinSpaced(2,0,1);
         igl::slice(EF,reducedEFIndices, Two, reducedEF);
-        VectorXi faceExist=VectorXi::Zero(F.rows());
+        /*VectorXi faceExist=VectorXi::Zero(F.rows());
         for (int i=0;i<reducedEF.rows();i++){
             faceExist(reducedEF(i,0))=1;
             faceExist(reducedEF(i,1))=1;
-        }
+        }*/
         
         //std::cout<<"faceExist.sum(): "<<faceExist.sum()<<std::endl;
         
         tree(reducedEF, dualTreeEdges, dualTreeFathers);
         //checking for repetitive things
-        VectorXi usedEdges=VectorXi::Zero(reducedEF.rows());
+        /*VectorXi usedEdges=VectorXi::Zero(reducedEF.rows());
         for (int i=0;i<dualTreeEdges.size();i++)
-            usedEdges(dualTreeEdges(i))=1;
+            usedEdges(dualTreeEdges(i))=1;*/
         
             
          //std::cout<<"usedEdges.sum(): "<<usedEdges.sum()<<std::endl;
@@ -156,7 +156,7 @@ namespace directional
         
         
         for (int i=0;i<dualTreeFathers.size();i++)
-            if (dualTreeFathers(i)!=-1)
+            if (dualTreeFathers(i)!=-1 && dualTreeFathers(i) != -2)
                 dualTreeFathers(i)=inFullIndices(dualTreeFathers(i));
         
         //building tree co-tree based homological cycles
@@ -179,6 +179,8 @@ namespace directional
             
             //std::cout<<"New Cycle"<<std::endl;
             //otherwise, follow both end faces to the root and this is the dual cycle
+			if (EF(i, 0) == -1 || EF(i, 1) == -1)
+				continue;
             basisCycleTriplets.push_back(Triplet<double>(numCycle+numV, i, 1.0));
             Vector2i currLeaves; currLeaves<<EF(i,0),EF(i,1);
             VectorXi visitedOnce=VectorXi::Zero(EF.rows());  //used to remove the tail from the LCA to the root
@@ -187,6 +189,12 @@ namespace directional
                 int currTreeEdge=-1;  //indexing within dualTreeEdges
                 int currFace=currLeaves(i);
                 currTreeEdge=dualTreeFathers(currFace);
+				if (currTreeEdge == -2)
+				{
+					numCycle--;
+					break;
+				}
+
                 while (currTreeEdge!=-1){
                    //determining orientation of current edge vs. face
                     double sign=((EF(currTreeEdge,0)==currFace) != (i==0) ? 1.0 : -1.0);
@@ -203,7 +211,6 @@ namespace directional
             for (size_t i=0;i<candidateTriplets.size();i++)
                 if (visitedOnce(candidateTriplets[i].col()))
                     basisCycleTriplets.push_back(candidateTriplets[i]);
-                    
         }
         
         basisCycleMat.setFromTriplets(basisCycleTriplets.begin(), basisCycleTriplets.end());
@@ -215,5 +222,3 @@ namespace directional
 
 
 #endif
-
-

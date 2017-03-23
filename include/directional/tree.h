@@ -29,12 +29,16 @@ namespace directional
         int numV=EV.maxCoeff()+1;
         VectorXi Valences=VectorXi::Zero(numV);
         for (int i=0;i<EV.rows();i++){
+			if (EV(i, 0) == -1 || EV(i, 1) == -1)
+				continue;
             Valences(EV(i,0))++;
             Valences(EV(i,1))++;
         }
         MatrixXi VE(numV, Valences.maxCoeff());
         Valences.setZero();
         for (int i=0;i<EV.rows();i++){
+			if (EV(i, 0) == -1 || EV(i, 1) == -1)
+				continue;
             VE(EV(i,0), Valences(EV(i,0))++)=i;
             VE(EV(i,1), Valences(EV(i,1))++)=i;
         }
@@ -52,6 +56,7 @@ namespace directional
     
         tE.resize(numV-1);
         tEf.resize(numV);
+		tEf.setConstant(-2);
         int currEdgeIndex=0;
         edgeVertices.push(std::pair<int, int>(-1, 0));
         do{
@@ -76,6 +81,7 @@ namespace directional
         //assert(usedVertices.sum()!=numV);  //we didn't visit every vertex
         std::cout<<"usedVertices.sum()"<<usedVertices.sum()<<std::endl;
         std::cout<<"numV"<<numV<<std::endl;
+		tE.conservativeResize(usedVertices.sum() - 1);
     }
         
 }
