@@ -20,7 +20,7 @@ Eigen::MatrixXi F, fieldF, meshF, singF, EV, FE, EF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, norm, representative, raw, B1, B2, B3;
 Eigen::VectorXd adjustmentField, other;
 Eigen::VectorXi match; 
-Eigen::VectorXi indices;
+Eigen::SparseVector<int> indices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 bool mode = true;
 
@@ -34,7 +34,7 @@ void writeToCSVfile(std::string name, Eigen::MatrixXd matrix)
 }
 
 
-int N = 3;
+int N = 2;
 
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
@@ -56,7 +56,7 @@ void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::MatrixXd &raw)
 
 	Eigen::MatrixXd spheres;
 	spheres.resize(2, 3);
-	spheres << meshV.row(30), meshV.row(90);
+	spheres << meshV.row(30), meshV.row(200);
 	directional::point_spheres(spheres, .008, Eigen::RowVector3d(1, 0, 0).replicate(2, 1), 10, false, singV, singF, singC);
 	Eigen::MatrixXd a;
 	Eigen::MatrixXi b;
@@ -106,13 +106,14 @@ int main()
 	igl::per_face_normals(meshV, meshF, norm);
 
 	directional::dual_cycles(meshV, meshF, EV, EF, cycles);
-	std::cout << cycles.row(meshV.rows()) << std::endl;
-	std::cout << cycles.row(meshV.rows() + 1) << std::endl;
-	indices = Eigen::VectorXi::Zero(cycles.rows());
+	//std::cout << cycles.row(meshV.rows()) << std::endl;
+	//std::cout << cycles.row(meshV.rows() + 1) << std::endl;
+	indices.resize(cycles.rows());
 
 	//writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
-	indices(30) = N;
-	indices(90) = N;
+	indices.insert(30) = N;
+	indices.insert(200) = N;
+	indices.insert(301) = -2*N;
 	
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField);
 
