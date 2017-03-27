@@ -55,9 +55,9 @@ void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::MatrixXd &raw)
 	directional::drawable_field(meshV, meshF, raw, color, N, false, fieldV, fieldF, fieldC);
 
 	Eigen::MatrixXd spheres;
-	spheres.resize(2, 3);
-	spheres << meshV.row(30), meshV.row(200);
-	directional::point_spheres(spheres, .008, Eigen::RowVector3d(1, 0, 0).replicate(2, 1), 10, false, singV, singF, singC);
+	//spheres.resize(2, 3);
+	//spheres << meshV.row(30), meshV.row(200);
+	//directional::point_spheres(spheres, .008, Eigen::RowVector3d(1, 0, 0).replicate(2, 1), 10, false, singV, singF, singC);
 	Eigen::MatrixXd a;
 	Eigen::MatrixXi b;
 	ConcatMeshes(meshV, meshF, fieldV, fieldF, a, b);
@@ -99,7 +99,7 @@ int main()
 {
 	igl::viewer::Viewer viewer;
 	viewer.callback_key_down = &key_down;
-	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
+	igl::readOBJ("../../data/loop-corner.obj", meshV, meshF);
 	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
 
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
@@ -111,9 +111,9 @@ int main()
 	indices.resize(cycles.rows());
 
 	//writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
-	indices.insert(30) = N;
-	indices.insert(200) = N;
-	indices.insert(301) = -2*N;
+	//indices.insert(1) = N;
+	indices.insert(indices.rows() - 2) = -N;
+	indices.insert(indices.rows() - 1) = N;
 	
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField);
 

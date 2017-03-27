@@ -70,7 +70,7 @@ namespace directional
 			std::vector<bool> isBorder = igl::is_border_vertex(V, F);
 			//contractible (1-ring) cycles/boundary cycle:
 			for (int i = 0; i < EV.rows(); i++) {
-				if (isBorder[EV(i, 0)] && isBorder[EV(i, 1)])
+				if (EF(i, 0) == -1 || EF(i, 1) == -1)
 					continue;
 
 				if (isBorder[EV(i, 0)])
@@ -90,7 +90,7 @@ namespace directional
 			std::vector<bool> isBorder = igl::is_border_vertex(V, F);
 			//contractible (1-ring) cycles/boundary cycle:
 			for (int i = 0; i < EV.rows(); i++) {
-				if (isBorder[EV(i, 0)] && isBorder[EV(i, 1)])
+				if (EF(i, 0) == -1 || EF(i, 1) == -1)
 					continue;
 				std::unordered_map<int, std::vector<Triplet<double>>> border;
 
@@ -114,7 +114,6 @@ namespace directional
 							basisCycleTriplets.push_back(Triplet<double>(numV + i, border[boundaryLoops[i][j]][k].col(), border[boundaryLoops[i][j]][k].value()));
 					}
 			}
-
 		}
 
 		if (g == boundaryLoops.size())
@@ -122,6 +121,7 @@ namespace directional
 			basisCycleMat.setFromTriplets(basisCycleTriplets.begin(), basisCycleTriplets.end());
 			return;
 		}
+
 		Eigen::VectorXi primalTreeEdges, dualTreeEdges;
         VectorXi /*primalTreeEdges,*/ primalTreeFathers;
         VectorXi /*dualTreeEdges, */dualTreeFathers;
@@ -132,24 +132,9 @@ namespace directional
         MatrixXi reducedEF;
         igl::setdiff(fullIndices,primalTreeEdges,reducedEFIndices,inFullIndices);
         VectorXi Two=VectorXi::LinSpaced(2,0,1);
+
         igl::slice(EF,reducedEFIndices, Two, reducedEF);
-        /*VectorXi faceExist=VectorXi::Zero(F.rows());
-        for (int i=0;i<reducedEF.rows();i++){
-            faceExist(reducedEF(i,0))=1;
-            faceExist(reducedEF(i,1))=1;
-        }*/
-        
-        //std::cout<<"faceExist.sum(): "<<faceExist.sum()<<std::endl;
-        
         tree(reducedEF, dualTreeEdges, dualTreeFathers);
-        //checking for repetitive things
-        /*VectorXi usedEdges=VectorXi::Zero(reducedEF.rows());
-        for (int i=0;i<dualTreeEdges.size();i++)
-            usedEdges(dualTreeEdges(i))=1;*/
-        
-            
-         //std::cout<<"usedEdges.sum(): "<<usedEdges.sum()<<std::endl;
-        
         //converting dualTreeEdges from reducedEF to EF
         for (int i=0;i<dualTreeEdges.size();i++)
             dualTreeEdges(i)=inFullIndices(dualTreeEdges(i));

@@ -76,7 +76,7 @@ namespace directional
 
 		// Same as igl::parallel_transport_angles?
         for (int i=0, j = 0;i<EF.rows();i++){
-			if (EF(i, 0) == -1 || EF(i, 1) == -1)
+			if (columns(i) == 0 || columns(i) == columns(i - 1))
 				continue;
 
             edgeVectors.row(j)=(V.row(EV(i,1))-V.row(EV(i,0))).normalized();
@@ -118,7 +118,6 @@ namespace directional
         SimplicialLDLT<SparseMatrix<double> > solver;
 
 		SparseMatrix<double> bbt = reducedCycles*reducedCycles.transpose();
-		cout << bbt.sum();
         solver.compute(bbt);
         VectorXd reducedAngles= reducedCycles.transpose()*solver.solve((-cycleHolonomy+cycleNewCurvature));
 
