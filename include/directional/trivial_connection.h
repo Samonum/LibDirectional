@@ -76,7 +76,7 @@ namespace directional
 
 		// Same as igl::parallel_transport_angles?
         for (int i=0, j = 0;i<EF.rows();i++){
-			if (columns(i) == 0 || columns(i) == columns(i - 1))
+			if (columns(i) == 0 || (i > 0 &&columns(i) == columns(i - 1)))
 				continue;
 
             edgeVectors.row(j)=(V.row(EV(i,1))-V.row(EV(i,0))).normalized();

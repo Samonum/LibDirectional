@@ -99,7 +99,7 @@ int main()
 {
 	igl::viewer::Viewer viewer;
 	viewer.callback_key_down = &key_down;
-	igl::readOBJ("../../data/loop-corner.obj", meshV, meshF);
+	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
 	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
 
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
