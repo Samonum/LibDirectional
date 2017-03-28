@@ -58,7 +58,13 @@ namespace directional
         tEf.resize(numV);
 		tEf.setConstant(-2);
         int currEdgeIndex=0;
-        edgeVertices.push(std::pair<int, int>(-1, 0));
+		int start = 0;
+
+		//Try to find initial possible root for the tree.
+		while (Valences[start] == 0)
+			if (++start > Valences.size())
+				return;
+        edgeVertices.push(std::pair<int, int>(-1, start));
         do{
             std::pair<int, int> currEdgeVertex=edgeVertices.front();
             edgeVertices.pop();

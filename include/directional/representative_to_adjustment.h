@@ -28,14 +28,12 @@ namespace directional
 		const Eigen::MatrixXd &representative,
 		int N,
 		Eigen::VectorXd& adjustAngles,
-		Eigen::VectorXi& matching,
 		double &globalRotation)
 	{
 		Eigen::MatrixXd B1, B2, B3;
 		Eigen::VectorXd local, parallel;
 		igl::local_basis(V, F, B1, B2, B3);
 		adjustAngles.resize(EV.rows(), 1);
-		matching.resize(EV.rows(), 1);
 
 		local.resize(F.rows());
 
@@ -60,14 +58,13 @@ namespace directional
 		{
 			if (EF(i, 0) == -1 || EF(i, 1) == -1)
 				continue;
+
 			adjustAngles(i) = local(EF(i,0)) - local(EF(i,1)) -parallel(i);
-			matching(i) =(int)(adjustAngles(i) / (2*igl::PI / N));
-			adjustAngles(i) -= (2 * igl::PI / N) * matching(i);
+			int matching =(int)(adjustAngles(i) / (2*igl::PI / N));
+			adjustAngles(i) -= (2 * igl::PI / N) * matching;
+
 			if (adjustAngles(i) > igl::PI/N)
-			{
 				adjustAngles(i) -= 2 * igl::PI/N;
-				matching(i) -= N;
-			}
 		}
 	}
 }

@@ -8,6 +8,9 @@
 #include <directional/adjustment_to_raw.h>
 #include <directional/representative_to_adjustment.h>
 #include <directional/point_spheres.h>
+#include <directional\principal_matching.h>
+#include <directional/singularities.h>
+#include <directional/draw_cycles.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -24,18 +27,19 @@ Eigen::SparseVector<int> indices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 bool mode = true;
 
+int N = 3;
+int ring;
+
+
+
 // define the format you want, you only need one instance of this...
 const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
-
-void writeToCSVfile(std::string name, Eigen::MatrixXd matrix)
+template<typename _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
+void writeToCSVfile(std::string name, Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> matrix)
 {
 	std::ofstream file(name.c_str());
 	file << matrix.format(CSVFormat);
 }
-
-
-int N = 2;
-
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
 {
@@ -53,6 +57,9 @@ void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::MatrixXd &raw)
 		Eigen::RowVector3d(0, 0, 1).replicate((N - 1) *raw.rows(), 1);
 	raw.rowwise().normalize();
 	directional::drawable_field(meshV, meshF, raw, color, N, false, fieldV, fieldF, fieldC);
+	
+	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
+	directional::draw_cycles(EF, cycles, Eigen::Vector3d(1, 0, 0), ring, meshC);
 
 	Eigen::MatrixXd spheres;
 	//spheres.resize(2, 3);
@@ -65,12 +72,12 @@ void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::MatrixXd &raw)
 
 	C.resize(F.rows(), 3);
 	C << meshC, fieldC, singC;
-
+	viewer.data.clear();
 	viewer.data.set_mesh(V, F);
 	viewer.data.set_colors(C);
 	viewer.data.set_face_based(true);
-
 }
+
 void UpdateViewer(igl::viewer::Viewer &viewer, Eigen::VectorXd &field)
 {
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, field, N, 0, raw);
@@ -81,16 +88,17 @@ bool key_down(igl::viewer::Viewer& viewer, unsigned char key, int modifiers)
 {
 	switch (key)
 	{
-	case 'Q':
-		if (mode)
-			UpdateViewer(viewer, other);
-		else
-			UpdateViewer(viewer, adjustmentField);
-		mode = !mode;
+	case 'N':
+		if (++ring >= cycles.rows())
+			ring -= cycles.rows();
+		UpdateViewer(viewer, adjustmentField);
 		break;
-	case 'B':
-		igl::local_basis(meshV, meshF, B1, B2, B3);
-		UpdateViewer(viewer, B3);
+	case 'P':
+		if (--ring < 0)
+			ring += cycles.rows();
+		UpdateViewer(viewer, adjustmentField);
+		break;
+	default:;
 	}
 	return true;
 }
@@ -99,8 +107,7 @@ int main()
 {
 	igl::viewer::Viewer viewer;
 	viewer.callback_key_down = &key_down;
-	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
-	meshC = Eigen::RowVector3d(.8, .8, .8).replicate(meshF.rows(),1);
+	igl::readOBJ("../../data/loop.obj", meshV, meshF);
 
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
 	igl::per_face_normals(meshV, meshF, norm);
@@ -110,16 +117,27 @@ int main()
 	//std::cout << cycles.row(meshV.rows() + 1) << std::endl;
 	indices.resize(cycles.rows());
 
-	//writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
-	//indices.insert(1) = N;
-	indices.insert(indices.rows() - 2) = -N;
-	indices.insert(indices.rows() - 1) = N;
+	ring = cycles.rows() - 1;
+
+	writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
+	indices.insert(cycles.rows() - 1) = N;
+	indices.insert(cycles.rows() - 2) = -N;
+	//indices.insert(30) = N;
+	//indices.insert(200) = N;
+	//indices.insert(300) = -2*N;
 	
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField);
-
+	
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
-	double angle;
-	directional::representative_to_adjustment(meshV, meshF, EV, EF, FE, representative, N, other, match, angle);
+	Eigen::VectorXi matching;
+	Eigen::VectorXd sing;
+	directional::principal_matching(meshV, meshF, EV, EF, FE, representative, N, matching);
+	directional::singularities(cycles, matching, sing);
+	writeToCSVfile("sing.txt", sing);
+	
+
+	//double angle;
+	//directional::representative_to_adjustment(meshv, meshf, ev, ef, fe, representative, n, other, angle);
 
 	UpdateViewer(viewer, adjustmentField);
 	viewer.launch();
