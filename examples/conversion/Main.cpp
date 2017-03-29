@@ -98,7 +98,6 @@ bool key_down(igl::viewer::Viewer& viewer, unsigned char key, int modifiers)
 			ring += cycles.rows();
 		UpdateViewer(viewer, adjustmentField);
 		break;
-	default:;
 	}
 	return true;
 }
@@ -107,7 +106,7 @@ int main()
 {
 	igl::viewer::Viewer viewer;
 	viewer.callback_key_down = &key_down;
-	igl::readOBJ("../../data/loop.obj", meshV, meshF);
+	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
 
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
 	igl::per_face_normals(meshV, meshF, norm);
@@ -120,19 +119,20 @@ int main()
 	ring = cycles.rows() - 1;
 
 	writeToCSVfile("cycles.txt", Eigen::MatrixXd(cycles));
-	indices.insert(cycles.rows() - 1) = N;
-	indices.insert(cycles.rows() - 2) = -N;
-	//indices.insert(30) = N;
-	//indices.insert(200) = N;
-	//indices.insert(300) = -2*N;
+	//indices.insert(cycles.rows() - 1) = N;
+	//indices.insert(cycles.rows() - 2) = -N;
+	indices.insert(30) = N;
+	indices.insert(200) = N;
+	indices.insert(300) = -2*N;
 	
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField);
 	
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 	Eigen::VectorXi matching;
-	Eigen::VectorXd sing;
+	Eigen::VectorXd sing, parallelAngle;
 	directional::principal_matching(meshV, meshF, EV, EF, FE, representative, N, matching);
-	directional::singularities(cycles, matching, sing);
+	igl::parallel_transport_angles(meshV, meshF, norm, EF, FE, parallelAngle);
+	directional::singularities(cycles, adjustmentField, parallelAngle, N, sing);
 	writeToCSVfile("sing.txt", sing);
 	
 
