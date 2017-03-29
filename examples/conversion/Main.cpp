@@ -8,7 +8,7 @@
 #include <directional/adjustment_to_raw.h>
 #include <directional/representative_to_adjustment.h>
 #include <directional/point_spheres.h>
-#include <directional\principal_matching.h>
+#include <directional/principal_matching.h>
 #include <directional/singularities.h>
 #include <directional/draw_cycles.h>
 #include <Eigen/Core>
