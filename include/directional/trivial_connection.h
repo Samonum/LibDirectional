@@ -28,24 +28,26 @@ namespace directional
     // Outputs:
     //  adjustAngles: the difference between the parallel transport and the modified one.
     //TODO: work with boundaries
-    IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
-                                       const Eigen::MatrixXi& F,
-                                       const Eigen::MatrixXi& EV,
-                                        const Eigen::MatrixXi& EF,
-                                        const Eigen::SparseMatrix<double>& basisCycles,
-                                        const Eigen::SparseVector<int>& indices,
-                                        const int N,
-                                        Eigen::VectorXd& adjustAngles)
-    {
-        using namespace Eigen;
-        using namespace std;
+	IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXi& EV,
+		const Eigen::MatrixXi& EF,
+		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,
+		const Eigen::SparseVector<int>& indices,
+		const int N,
+		Eigen::VectorXd& adjustAngles)
+	{
+		using namespace Eigen;
+		using namespace std;
 		VectorXi rows = ArrayXi::Zero(basisCycles.rows());
 		VectorXi columns = ArrayXi::Zero(basisCycles.cols());
 
 
-		for (int k = 0; k<basisCycles.outerSize(); ++k)
-			for (SparseMatrix<double>::InnerIterator it(basisCycles, k); it; ++it)
+		for (int k = 0; k < basisCycles.outerSize(); ++k)
+			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, k); it; ++it)
 			{
+				if (it.value() == 0)
+					continue;
 				rows[it.row()] = 1;
 				columns[it.col()] = 1;
 			}
@@ -55,71 +57,72 @@ namespace directional
 		for (int i = 1; i < columns.size(); i++)
 			columns[i] += columns[i - 1];
 
-		SparseMatrix<double> reducedCycles(rows[rows.size() - 1], columns[columns.size() - 1]);
+		SparseMatrix<double, Eigen::RowMajor> reducedCycles(rows[rows.size() - 1], columns[columns.size() - 1]);
 		SparseVector<double> reducedIndices(rows[rows.size() - 1]);
 		reducedCycles.reserve(VectorXi::Constant(columns[columns.size() - 1], 2));
 
-		for (int k = 0; k<basisCycles.outerSize(); ++k)
-			for (SparseMatrix<double>::InnerIterator it(basisCycles, k); it; ++it)
+		for (int k = 0; k < basisCycles.outerSize(); ++k)
+			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, k); it; ++it)
+				if (!it.value() == 0)
 				reducedCycles.insert(rows(it.row()) - 1, columns(it.col()) - 1) = it.value();
 
 		for (SparseVector<int>::InnerIterator it(indices); it; ++it)
 			reducedIndices.insert(rows(it.row()) - 1) = (double)it.value();
 
-        
-        VectorXd VK;  //just for comparison
-        igl::gaussian_curvature(V,F, VK);
-        MatrixXd B1, B2, B3;
-        igl::local_basis(V, F, B1, B2, B3);
-        VectorXd edgeParallelAngleChange(columns(columns.size()-1));  //the difference in the angle representation of edge i from EF(i,0) to EF(i,1)
-		MatrixXd edgeVectors(columns(columns.size() - 1),3);
+
+		VectorXd VK;  //just for comparison
+		igl::gaussian_curvature(V, F, VK);
+		MatrixXd B1, B2, B3;
+		igl::local_basis(V, F, B1, B2, B3);
+		VectorXd edgeParallelAngleChange(columns(columns.size() - 1));  //the difference in the angle representation of edge i from EF(i,0) to EF(i,1)
+		MatrixXd edgeVectors(columns(columns.size() - 1), 3);
 
 		// Same as igl::parallel_transport_angles?
-        for (int i=0, j = 0;i<EF.rows();i++){
-			if (columns(i) == 0 || (i > 0 &&columns(i) == columns(i - 1)))
+		for (int i = 0, j = 0; i < EF.rows(); i++) {
+			if (columns(i) == 0 || (i > 0 && columns(i) == columns(i - 1)))
 				continue;
 
-            edgeVectors.row(j)=(V.row(EV(i,1))-V.row(EV(i,0))).normalized();
-            double x1=edgeVectors.row(j).dot(B1.row(EF(i,0)));
-            double y1=edgeVectors.row(j).dot(B2.row(EF(i,0)));
-            double x2=edgeVectors.row(j).dot(B1.row(EF(i,1)));
-            double y2=edgeVectors.row(j).dot(B2.row(EF(i,1)));
-            edgeParallelAngleChange(j)=atan2(y2,x2)-atan2(y1,x1);
+			edgeVectors.row(j) = (V.row(EV(i, 1)) - V.row(EV(i, 0))).normalized();
+			double x1 = edgeVectors.row(j).dot(B1.row(EF(i, 0)));
+			double y1 = edgeVectors.row(j).dot(B2.row(EF(i, 0)));
+			double x2 = edgeVectors.row(j).dot(B1.row(EF(i, 1)));
+			double y2 = edgeVectors.row(j).dot(B2.row(EF(i, 1)));
+			edgeParallelAngleChange(j) = atan2(y2, x2) - atan2(y1, x1);
 			j++;
-        }
-        
-        //TODO: reduce extra cycles to the holonomy
-        VectorXd cycleHolonomy= reducedCycles*edgeParallelAngleChange;
-        for (int i=0;i<cycleHolonomy.size();i++){
-            while( cycleHolonomy(i) >=  M_PI ) cycleHolonomy(i) -= 2.0*M_PI;
-            while( cycleHolonomy(i) <  -M_PI ) cycleHolonomy(i) += 2.0*M_PI;
-        }
+		}
 
-		VectorXd cycleNewCurvature=reducedIndices*(2.0*M_PI/(double)N);
-        //MatrixXd Test(cycleHolonomy.rows(),3); Test<<cycleHolonomy, VK, cycleNewCurvature;
-        //cout<<"basis cycle differences"<<(cycleHolonomy-VK).lpNorm()<<endl;
-        //SparseQR<SparseMatrix<double>, COLAMDOrdering<int> > solver;
-        //solver.compute(basisCycles.transpose());
-        //adjustAngles=solver.solve(-cycleHolonomy+cycleNewCurvature);
-        //SparseMatrix<double> Q, R, P;
-        //Q = SparseQR<SparseMatrix<double>, COLAMDOrdering<int> >(basisCycles).matrixQ();
-        //R=solver.matrixR().transpose();
-        
-        //[Q, R, E] = qr(A', 0);
-        //x = Q * (R' \ (E' \ b));
-        
-       // cout<<"solver.colsPermutation().rows(), solver.colsPermutation().cols(): "<<solver.colsPermutation().rows()<<", "<<solver.colsPermutation().cols()<<endl;
-         
-        //VectorXd ETrhs=solver.colsPermutation().transpose()*(-cycleHolonomy+cycleNewCurvature);
-        //VectorXd y =R.triangularView<Lower>().solve(ETrhs);
-        //adjustAngles=Q*y;
-        
-        //x = A' * ((A*A')\ b);
-        SimplicialLDLT<SparseMatrix<double> > solver;
+		//TODO: reduce extra cycles to the holonomy
+		VectorXd cycleHolonomy = reducedCycles*edgeParallelAngleChange;
+		for (int i = 0; i < cycleHolonomy.size(); i++) {
+			while (cycleHolonomy(i) >= M_PI) cycleHolonomy(i) -= 2.0*M_PI;
+			while (cycleHolonomy(i) < -M_PI) cycleHolonomy(i) += 2.0*M_PI;
+		}
+
+		VectorXd cycleNewCurvature = reducedIndices*(2.0*M_PI / (double)N);
+		//MatrixXd Test(cycleHolonomy.rows(),3); Test<<cycleHolonomy, VK, cycleNewCurvature;
+		//cout<<"basis cycle differences"<<(cycleHolonomy-VK).lpNorm()<<endl;
+		//SparseQR<SparseMatrix<double>, COLAMDOrdering<int> > solver;
+		//solver.compute(basisCycles.transpose());
+		//adjustAngles=solver.solve(-cycleHolonomy+cycleNewCurvature);
+		//SparseMatrix<double> Q, R, P;
+		//Q = SparseQR<SparseMatrix<double>, COLAMDOrdering<int> >(basisCycles).matrixQ();
+		//R=solver.matrixR().transpose();
+
+		//[Q, R, E] = qr(A', 0);
+		//x = Q * (R' \ (E' \ b));
+
+	   // cout<<"solver.colsPermutation().rows(), solver.colsPermutation().cols(): "<<solver.colsPermutation().rows()<<", "<<solver.colsPermutation().cols()<<endl;
+
+		//VectorXd ETrhs=solver.colsPermutation().transpose()*(-cycleHolonomy+cycleNewCurvature);
+		//VectorXd y =R.triangularView<Lower>().solve(ETrhs);
+		//adjustAngles=Q*y;
+
+		//x = A' * ((A*A')\ b);
+		SimplicialLDLT<SparseMatrix<double> > solver;
 
 		SparseMatrix<double> bbt = reducedCycles*reducedCycles.transpose();
-        solver.compute(bbt);
-        VectorXd reducedAngles= reducedCycles.transpose()*solver.solve((-cycleHolonomy+cycleNewCurvature));
+		solver.compute(bbt);
+		VectorXd reducedAngles = reducedCycles.transpose()*solver.solve((-cycleHolonomy + cycleNewCurvature));
 
 		adjustAngles.resize(columns.size());
 
@@ -129,9 +132,9 @@ namespace directional
 		for (int i = 1; i < columns.size(); i++)
 			if (columns[i] != columns[i - 1])
 				adjustAngles[i] = reducedAngles[columns[i - 1]];
-        
-        std::cout<<"Error of adjustment angles computation: "<<(reducedCycles*reducedAngles -(-cycleHolonomy+cycleNewCurvature)).lpNorm<Infinity>()<<std::endl;
-    }
+
+		std::cout << "Error of adjustment angles computation: " << (reducedCycles*reducedAngles - (-cycleHolonomy + cycleNewCurvature)).lpNorm<Infinity>() << std::endl;
+	}
 }
 
     
