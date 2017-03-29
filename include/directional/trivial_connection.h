@@ -46,7 +46,7 @@ namespace directional
 		for (int k = 0; k < basisCycles.outerSize(); ++k)
 			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, k); it; ++it)
 			{
-				if (it.value() == 0)
+				if (!it.value())
 					continue;
 				rows[it.row()] = 1;
 				columns[it.col()] = 1;
@@ -63,8 +63,8 @@ namespace directional
 
 		for (int k = 0; k < basisCycles.outerSize(); ++k)
 			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, k); it; ++it)
-				if (!it.value() == 0)
-				reducedCycles.insert(rows(it.row()) - 1, columns(it.col()) - 1) = it.value();
+				if (it.value())
+                    reducedCycles.insert(rows(it.row()) - 1, columns(it.col()) - 1) = it.value();
 
 		for (SparseVector<int>::InnerIterator it(indices); it; ++it)
 			reducedIndices.insert(rows(it.row()) - 1) = (double)it.value();
