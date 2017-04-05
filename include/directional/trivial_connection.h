@@ -9,6 +9,7 @@
 #include <igl/gaussian_curvature.h>
 #include <igl/local_basis.h>
 #include <igl/parallel_transport_angles.h>
+#include <igl/edge_topology.h>
 #include <Eigen/Core>
 #include <vector>
 #include <cmath>
@@ -16,33 +17,42 @@
 
 namespace directional
 {    
-    // Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. The output is the modification to the parallel transport.
+    // Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. 
+	// In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. 
+	// The output is the modification to the parallel transport.
     // Inputs:
     //  V: #V X 3 vertex coordinates
     //  F: #F by 3 face vertex indices
     //  EF: #E X 2 edges 2 faces indices
-    //  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
-    //  the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
+	//  EV: #E by 2 indices of the vertices surrounding each edge
+    //  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
+	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
     //  indices: #basisCycles the index around each cycle. They should add up to N*Euler_characteristic of the mesh.
     //  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
     // Outputs:
     //  adjustAngles: the difference between the parallel transport and the modified one.
+	//  error: gives the total error of the field. If this is not approximately 0 your singularities probably don't add up properly.
     //TODO: work with boundaries
 	IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
 		const Eigen::MatrixXi& EF,
+		const Eigen::MatrixXd& B1,
+		const Eigen::MatrixXd& B2,
 		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,
-		const Eigen::SparseVector<int>& indices,
+		const Eigen::VectorXd& indices,
 		const int N,
-		Eigen::VectorXd& adjustAngles)
+		Eigen::VectorXd& adjustAngles,
+		double &error)
 	{
 		using namespace Eigen;
 		using namespace std;
+
 		VectorXi rows = ArrayXi::Zero(basisCycles.rows());
 		VectorXi columns = ArrayXi::Zero(basisCycles.cols());
 
-
+		//Filter out empty rows and columns
 		for (int k = 0; k < basisCycles.outerSize(); ++k)
 			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, k); it; ++it)
 			{
@@ -58,7 +68,7 @@ namespace directional
 			columns[i] += columns[i - 1];
 
 		SparseMatrix<double, Eigen::RowMajor> reducedCycles(rows[rows.size() - 1], columns[columns.size() - 1]);
-		SparseVector<double> reducedIndices(rows[rows.size() - 1]);
+		VectorXd reducedIndices(rows[rows.size() - 1]);
 		reducedCycles.reserve(VectorXi::Constant(columns[columns.size() - 1], 2));
 
 		for (int k = 0; k < basisCycles.outerSize(); ++k)
@@ -66,20 +76,17 @@ namespace directional
 				if (it.value())
                     reducedCycles.insert(rows(it.row()) - 1, columns(it.col()) - 1) = it.value();
 
-		for (SparseVector<int>::InnerIterator it(indices); it; ++it)
-			reducedIndices.insert(rows(it.row()) - 1) = (double)it.value();
+		for (int i = 0; i < indices.size(); i++)
+			if((i == 0 && rows(i) == 1) || (i > 0 && rows(i) > rows(i-1)))
+				reducedIndices(rows(i) - 1) = indices(i);
 
 
-		VectorXd VK;  //just for comparison
-		igl::gaussian_curvature(V, F, VK);
-		MatrixXd B1, B2, B3;
-		igl::local_basis(V, F, B1, B2, B3);
 		VectorXd edgeParallelAngleChange(columns(columns.size() - 1));  //the difference in the angle representation of edge i from EF(i,0) to EF(i,1)
 		MatrixXd edgeVectors(columns(columns.size() - 1), 3);
 
-		// Same as igl::parallel_transport_angles?
 		for (int i = 0, j = 0; i < EF.rows(); i++) {
-			if (columns(i) == 0 || (i > 0 && columns(i) == columns(i - 1)))
+			//skip border edges
+			if (EF(i,0) == -1 || EF(i,1) ==  -1)
 				continue;
 
 			edgeVectors.row(j) = (V.row(EV(i, 1)) - V.row(EV(i, 0))).normalized();
@@ -91,7 +98,7 @@ namespace directional
 			j++;
 		}
 
-		//TODO: reduce extra cycles to the holonomy
+
 		VectorXd cycleHolonomy = reducedCycles*edgeParallelAngleChange;
 		for (int i = 0; i < cycleHolonomy.size(); i++) {
 			while (cycleHolonomy(i) >= M_PI) cycleHolonomy(i) -= 2.0*M_PI;
@@ -99,25 +106,8 @@ namespace directional
 		}
 
 		VectorXd cycleNewCurvature = reducedIndices*(2.0*M_PI / (double)N);
-		//MatrixXd Test(cycleHolonomy.rows(),3); Test<<cycleHolonomy, VK, cycleNewCurvature;
-		//cout<<"basis cycle differences"<<(cycleHolonomy-VK).lpNorm()<<endl;
-		//SparseQR<SparseMatrix<double>, COLAMDOrdering<int> > solver;
-		//solver.compute(basisCycles.transpose());
-		//adjustAngles=solver.solve(-cycleHolonomy+cycleNewCurvature);
-		//SparseMatrix<double> Q, R, P;
-		//Q = SparseQR<SparseMatrix<double>, COLAMDOrdering<int> >(basisCycles).matrixQ();
-		//R=solver.matrixR().transpose();
 
-		//[Q, R, E] = qr(A', 0);
-		//x = Q * (R' \ (E' \ b));
 
-	   // cout<<"solver.colsPermutation().rows(), solver.colsPermutation().cols(): "<<solver.colsPermutation().rows()<<", "<<solver.colsPermutation().cols()<<endl;
-
-		//VectorXd ETrhs=solver.colsPermutation().transpose()*(-cycleHolonomy+cycleNewCurvature);
-		//VectorXd y =R.triangularView<Lower>().solve(ETrhs);
-		//adjustAngles=Q*y;
-
-		//x = A' * ((A*A')\ b);
 		SimplicialLDLT<SparseMatrix<double> > solver;
 
 		SparseMatrix<double> bbt = reducedCycles*reducedCycles.transpose();
@@ -133,7 +123,65 @@ namespace directional
 			if (columns[i] != columns[i - 1])
 				adjustAngles[i] = reducedAngles[columns[i - 1]];
 
-		std::cout << "Error of adjustment angles computation: " << (reducedCycles*reducedAngles - (-cycleHolonomy + cycleNewCurvature)).lpNorm<Infinity>() << std::endl;
+		error = (reducedCycles*reducedAngles - (-cycleHolonomy + cycleNewCurvature)).lpNorm<Infinity>();
+	}
+
+	// Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. 
+	// In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. 
+	// The output is the modification to the parallel transport.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates
+	//  F: #F by 3 face vertex indices
+	//  EF: #E X 2 edges 2 faces indices
+	//  EV: #E by 2 indices of the vertices surrounding each edge
+	//  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
+	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
+	//  indices: #basisCycles the index around each cycle. They should add up to N*Euler_characteristic of the mesh.
+	//  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
+	// Outputs:
+	//  adjustAngles: the difference between the parallel transport and the modified one.
+	//  error: gives the total error of the field. If this is not approximately 0 your singularities probably don't add up properly.
+	//TODO: work with boundaries
+	IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXi& EV,
+		const Eigen::MatrixXi& EF,
+		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,
+		const Eigen::VectorXd& indices,
+		const int N,
+		Eigen::VectorXd& adjustAngles,
+		double &error)
+	{
+		Eigen::MatrixXd B1, B2, B3;
+		igl::local_basis(V, F, B1, B2, B3);
+		trivial_connection(V, F, EV, EF, B1, B2, basisCycles, indices, N, adjustAngles, error);
+	}
+
+	// Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. 
+	// In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. 
+	// The output is the modification to the parallel transport.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates
+	//  F: #F by 3 face vertex indices
+	//  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
+	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
+	//  indices: #basisCycles the index around each cycle. They should add up to N*Euler_characteristic of the mesh.
+	//  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
+	// Outputs:
+	//  adjustAngles: the difference between the parallel transport and the modified one.
+	//  error: gives the total error of the field. If this is not approximately 0 your singularities probably don't add up properly.
+	//TODO: work with boundaries
+	IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,
+		const Eigen::VectorXd& indices,
+		const int N,
+		Eigen::VectorXd& adjustAngles,
+		double &error)
+	{
+		Eigen::MatrixXi EV, x, EF;
+		igl::edge_topology(V, F, EV, x, EF);
+		trivial_connection(V, F, EV, EF, basisCycles, indices, N, adjustAngles, error);
 	}
 }
 

@@ -12,6 +12,7 @@
 #include <igl/setdiff.h>
 #include <igl/slice.h>
 #include <igl/unique.h>
+#include <igl/edge_topology.h>
 #include <vector>
 #include <unordered_map>
 #include "tree.h"
@@ -20,13 +21,15 @@
 namespace directional
 {
 	// create a matrix the encodes the sums over the basis dual cycles in the mesh
+	// the basis cycle matrix first contains #V cycles for each vertex (including 
+	// empty cycles for border vertices), than #borders border cycles and finally 
+	// 2*genus generator cycles around all handles.
 	//input:
 	//  F: #F by 3 triangles.
-	//  EV: #E by 2 matrix of edges (vertex indices
+	//  EV: #E by 2 matrix of edges (vertex indices)
 	//  EF: #E by 2 matrix of oriented adjacent faces.
 	//output:
 	//  basisCycleMat: #C by #E basis cycles (summing over edges)
-	// TODO: proper handling of boundary
 	IGL_INLINE void dual_cycles(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
@@ -133,9 +136,8 @@ namespace directional
 				reducedEV(i,0) = -1;
 
 
-		Eigen::VectorXi primalTreeEdges, dualTreeEdges;
-		VectorXi /*primalTreeEdges,*/ primalTreeFathers;
-		VectorXi /*dualTreeEdges, */dualTreeFathers;
+		VectorXi primalTreeEdges, primalTreeFathers;
+		VectorXi dualTreeEdges, dualTreeFathers;
 		tree(reducedEV, primalTreeEdges, primalTreeFathers);
 		//creating a set of dual edges that do not cross edges in the primal tree
 		VectorXi fullIndices = VectorXi::LinSpaced(EV.rows(), 0, EV.rows() - 1);
@@ -213,5 +215,23 @@ namespace directional
 		basisCycleMat.prune(0, 0);
 	}
 
+
+	// create a matrix the encodes the sums over the basis dual cycles in the mesh
+	// the basis cycle matrix first contains #V cycles for each vertex (including 
+	// empty cycles for border vertices), than #borders border cycles and finally 
+	// 2*genus generator cycles around all handles.
+	//input:
+	//  F: #F by 3 triangles.
+	//output:
+	//  basisCycleMat: #C by #E basis cycles (summing over edges)
+	IGL_INLINE void dual_cycles(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat
+	)
+	{
+		Eigen::MatrixXi EV, EF, x;
+		igl::edge_topology(V, F, EV, EF, x);
+		directional::dual_cycles(V, F, EV, EF, basisCycleMat);
+	}
 }
 #endif

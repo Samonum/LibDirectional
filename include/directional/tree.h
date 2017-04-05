@@ -14,8 +14,7 @@
 namespace directional
 {
     // create a tree from a graph given by the edges in EV
-    // the graph should be connected. That means that EV.minCoeff()=0 and EV.maxCoeff=|V|
-    
+    // edges containing a negative vertex are skipped. 
     // Inputs:
     //  EV #E by 2 list of edges in the graph
     // Outputs:
@@ -34,6 +33,7 @@ namespace directional
             Valences(EV(i,0))++;
             Valences(EV(i,1))++;
         }
+
         MatrixXi VE(numV, Valences.maxCoeff());
         Valences.setZero();
         for (int i=0;i<EV.rows();i++){
@@ -47,12 +47,7 @@ namespace directional
         int numUsed=0;
         
         //queue and initial possible edges
-        std::queue<std::pair<int,int> > edgeVertices;  //pairs of edge-from and target vertex
-        /*for (int i=0;i<Valences(0);i++){
-            int nextEdge=VE(0, i);
-            int nextVertex=(EV(nextEdge, 0)==0 ? EV(nextEdge, 1) : EV(nextEdge, 0));
-            edgeVertices.push(std::pair<int, int>(nextEdge, nextVertex));
-        }*/
+        std::queue<std::pair<int,int> > edgeVertices;
     
         tE.resize(numV-1);
         tEf.resize(numV);
@@ -64,6 +59,7 @@ namespace directional
 		while (Valences[start] == 0)
 			if (++start > Valences.size())
 				return;
+
         edgeVertices.push(std::pair<int, int>(-1, start));
         do{
             std::pair<int, int> currEdgeVertex=edgeVertices.front();
@@ -84,9 +80,7 @@ namespace directional
                     edgeVertices.push(std::pair<int, int>(nextEdge, nextVertex));
             }
         }while (edgeVertices.size()!=0);
-        //assert(usedVertices.sum()!=numV);  //we didn't visit every vertex
-        std::cout<<"usedVertices.sum()"<<usedVertices.sum()<<std::endl;
-        std::cout<<"numV"<<numV<<std::endl;
+
 		tE.conservativeResize(usedVertices.sum() - 1);
     }
         
