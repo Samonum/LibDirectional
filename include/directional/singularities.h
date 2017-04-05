@@ -6,9 +6,9 @@
 #ifndef SINGULARITIES_H
 #define SINGULARITIES_H
 #include <igl/igl_inline.h>
-#include <igl/gaussian_curvature.h>
-#include <igl/local_basis.h>
-#include <igl/triangle_triangle_adjacency.h>
+#include <igl/edge_topology.h>
+#include <igl/parallel_transport_angles.h>
+#include <igl/per_face_normals.h>
 #include <igl/parallel_transport_angles.h>
 
 #include <Eigen/Core>
@@ -51,8 +51,35 @@ namespace directional
 			while (cycleHolonomy(i) < -M_PI) cycleHolonomy(i) += 2.0*M_PI;
 		}
 
-		singularities = ((basisCycleMat * angles + cycleHolonomy).array() / (2.*igl::PI / N));
+		singularities = ((basisCycleMat * adjustAngles + cycleHolonomy).array() / (2.*igl::PI / N));
 	}
+
+	// Computes a matrix containing the singularity values of all cycles
+	// Inputs:
+	//   basisCycleMat: #basisCycles by #E the oriented basis cycles around which the singularities are measured
+	//   adjustAngles: #E angles that encode deviation from parallel transport.
+	//   parallelTransportAngles: #E angles used ffor parallel transport between each edge.
+	//   N: the degree of the field
+	// Outputs:
+	//   singularities: #basisCycles the index around each cycle.
+	IGL_INLINE void singularities(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat,
+		const Eigen::VectorXd& adjustAngles,
+		int N,
+		Eigen::VectorXd& singularities)
+	{
+		Eigen::MatrixXi x, FE, EF;
+		Eigen::MatrixXd norm;
+		Eigen::VectorXd parallelTransportAngles;
+		
+		igl::edge_topology(V, F, x, FE, EF);
+		igl::per_face_normals(V, F, norm);
+
+		igl::parallel_transport_angles(V, F, norm, EF, FE, parallelTransportAngles);
+		directional::singularities(basisCycleMat, adjustAngles, parallelTransportAngles, N, singularities);
+	}
+
 }
 
 
