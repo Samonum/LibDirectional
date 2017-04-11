@@ -4,6 +4,7 @@
 #include <directional/representative_to_raw.h>
 #include <igl/local_basis.h>
 #include <igl/parallel_transport_angles.h>
+#include <igl/edge_topology.h>
 #include <Eigen/Core>
 
 namespace directional
@@ -68,7 +69,26 @@ namespace directional
 		}
 	}
 
-
+	// Computes the adjustment angle field given the representative field.
+	// Inputs::
+	//  V: #V by 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  representative: #F by 3 coordinates of representative vectors.
+	//  N: the degree of the field.
+	// Outputs:
+	//  adjustAngles: #E angles that encode deviation from parallel transport.
+	//  globalRotation: The angle between the vector on the first face and its basis in radians.
+	IGL_INLINE void representative_to_adjustment(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXd& representative,
+		int N,
+		Eigen::VectorXd& adjustAngles,
+		double& globalRotation)
+	{
+		MatrixXi EV, FE, EF;
+		igl::edge_topology(V, F, EV, FE, EF);
+		representative_to_adjustment(V, F, EV, FE, EF, representative, N, adjustAngles, globalRotation);
+	}
 }
 
 #endif
