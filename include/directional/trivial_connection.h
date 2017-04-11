@@ -10,6 +10,8 @@
 #include <igl/local_basis.h>
 #include <igl/parallel_transport_angles.h>
 #include <igl/edge_topology.h>
+#include <igl/gaussian_curvature.h>
+#include <igl/boundary_loop.h>
 #include <Eigen/Core>
 #include <vector>
 #include <cmath>
@@ -80,30 +82,73 @@ namespace directional
 			if((i == 0 && rows(i) == 1) || (i > 0 && rows(i) > rows(i-1)))
 				reducedIndices(rows(i) - 1) = indices(i);
 
+		// Start of to be replaced section
 
 		VectorXd edgeParallelAngleChange(columns(columns.size() - 1));  //the difference in the angle representation of edge i from EF(i,0) to EF(i,1)
-		MatrixXd edgeVectors(columns(columns.size() - 1), 3);
+		//MatrixXd edgeVectors(columns(columns.size() - 1), 3);
 
 		for (int i = 0, j = 0; i < EF.rows(); i++) {
 			//skip border edges
 			if (EF(i,0) == -1 || EF(i,1) ==  -1)
 				continue;
 
-			edgeVectors.row(j) = (V.row(EV(i, 1)) - V.row(EV(i, 0))).normalized();
-			double x1 = edgeVectors.row(j).dot(B1.row(EF(i, 0)));
-			double y1 = edgeVectors.row(j).dot(B2.row(EF(i, 0)));
-			double x2 = edgeVectors.row(j).dot(B1.row(EF(i, 1)));
-			double y2 = edgeVectors.row(j).dot(B2.row(EF(i, 1)));
+			RowVectorXd edgeVectors = (V.row(EV(i, 1)) - V.row(EV(i, 0))).normalized();
+			double x1 = edgeVectors.dot(B1.row(EF(i, 0)));
+			double y1 = edgeVectors.dot(B2.row(EF(i, 0)));
+			double x2 = edgeVectors.dot(B1.row(EF(i, 1)));
+			double y2 = edgeVectors.dot(B2.row(EF(i, 1)));
 			edgeParallelAngleChange(j) = atan2(y2, x2) - atan2(y1, x1);
 			j++;
 		}
-
-
+		
+		
 		VectorXd cycleHolonomy = reducedCycles*edgeParallelAngleChange;
 		for (int i = 0; i < cycleHolonomy.size(); i++) {
 			while (cycleHolonomy(i) >= M_PI) cycleHolonomy(i) -= 2.0*M_PI;
 			while (cycleHolonomy(i) < -M_PI) cycleHolonomy(i) += 2.0*M_PI;
 		}
+
+		// End of to be replaced section
+
+		//VectorXd cycleHolonomy(reducedCycles.rows());
+		VectorXd gc;
+		igl::gaussian_curvature(V, F, gc);
+
+		//Copy over for contractible cycles
+		for (int i = 0; i < gc.size(); i++)
+			if ((i == 0 && rows(i) == 1) || (i > 0 && rows(i) > rows(i - 1)))
+				cycleHolonomy(rows(i) - 1) = gc(i);
+		Eigen::VectorXi border(V.rows());
+
+		//Found border vertices
+		border(0) = 1-rows(0);
+		for (int i = 1; i < border.rows(); i++)
+			border(i) = rows(i) == rows(i - 1);
+
+		//Sum holonomy for boundaries
+		int i = 0, added = 0, total = border.sum();
+		while (added < total)
+		{
+			double temp = cycleHolonomy(V.rows() - total + i);
+			cycleHolonomy(V.rows() - total + i) = 0;
+			//Loop over boundary cycles
+			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, V.rows() + i); it; ++it)
+				if (it.value())
+					if (border(EV(it.col(), 0)) || border(EV(it.col(), 1)))
+					{
+						int b = border(EV(it.col(), 1));
+						// Substract Pi, as igl::gaussian_curvature calculates gc as 2 * PI - sum(angles)
+						cycleHolonomy(V.rows() - total + i) += gc(border(EV(it.col(), b))) - igl::PI;
+						cout << "Curvature at border vertex: " << gc(border(EV(it.col(), b))) << endl;
+						//Ensure vertices won't be counted twice
+						border(EV(it.col(), b)) = 0;
+						added++;
+					}
+			cout << "Old curvature: " << temp << " " << "    New curvature: " << cycleHolonomy(V.rows() - total + i) << endl;
+			i++;
+		}
+
+
 
 		VectorXd cycleNewCurvature = reducedIndices*(2.0*M_PI / (double)N);
 

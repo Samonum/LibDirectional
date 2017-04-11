@@ -12,7 +12,7 @@
 #include <igl/setdiff.h>
 #include <igl/slice.h>
 #include <igl/unique.h>
-#include <igl/edge_topology.h>
+#include <igl/edge_flaps.h>
 #include <vector>
 #include <unordered_map>
 #include "tree.h"
@@ -30,14 +30,15 @@ namespace directional
 	//  EF: #E by 2 matrix of oriented adjacent faces.
 	//output:
 	//  basisCycleMat: #C by #E basis cycles (summing over edges)
-	IGL_INLINE void dual_cycles(const Eigen::MatrixXd& V,
-		const Eigen::MatrixXi& F,
+	IGL_INLINE void dual_cycles(const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
 		const Eigen::MatrixXi& EF,
 		Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat
 	)
 	{
 		using namespace Eigen;
+		std::vector<bool> isBorder;
+
 		int numV = F.maxCoeff() + 1;
 		int eulerCharacteristic = numV - EV.rows() + F.rows();
 		int g = (2 - eulerCharacteristic);
@@ -64,35 +65,16 @@ namespace directional
 
 		if (boundaryLoops.size() == 0)
 		{
+			isBorder.resize(numV, false);
 			//contractible (1-ring) cycles + boundary loops:
 			for (int i = 0; i < EV.rows(); i++) {
 				basisCycleTriplets.push_back(Triplet<double>(EV(i, 0), i, -1.0));
 				basisCycleTriplets.push_back(Triplet<double>(EV(i, 1), i, 1.0));
 			}
 		}
-		else if (boundaryLoops.size() == 1)
-		{
-			std::vector<bool> isBorder = igl::is_border_vertex(V, F);
-			//contractible (1-ring) cycles/boundary cycle:
-			for (int i = 0; i < EV.rows(); i++) {
-				if (EF(i, 0) == -1 || EF(i, 1) == -1)
-					continue;
-
-				if (isBorder[EV(i, 0)])
-					basisCycleTriplets.push_back(Triplet<double>(numV, i, -1.0));
-				else
-					basisCycleTriplets.push_back(Triplet<double>(EV(i, 0), i, -1.0));
-
-				if (isBorder[EV(i, 1)])
-					basisCycleTriplets.push_back(Triplet<double>(numV, i, 1.0));
-				else
-					basisCycleTriplets.push_back(Triplet<double>(EV(i, 1), i, 1.0));
-			}
-
-		}
 		else
 		{
-			std::vector<bool> isBorder = igl::is_border_vertex(V, F);
+			isBorder = igl::is_border_vertex(MatrixXi(numV, 0), F);
 			//contractible (1-ring) cycles/boundary cycle:
 			for (int i = 0; i < EV.rows(); i++) {
 				if (EF(i, 0) == -1 || EF(i, 1) == -1)
@@ -129,7 +111,6 @@ namespace directional
 			return;
 		}
 
-		std::vector<bool> isBorder = igl::is_border_vertex(V, F);
 		MatrixXi reducedEV(EV);
 		for (int i = 1; i < reducedEV.rows(); i++)
 			if(isBorder[reducedEV(i,0)] || isBorder[reducedEV(i, 1)])
@@ -224,14 +205,13 @@ namespace directional
 	//  F: #F by 3 triangles.
 	//output:
 	//  basisCycleMat: #C by #E basis cycles (summing over edges)
-	IGL_INLINE void dual_cycles(const Eigen::MatrixXd& V,
-		const Eigen::MatrixXi& F,
+	IGL_INLINE void dual_cycles(const Eigen::MatrixXi& F,
 		Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat
 	)
 	{
 		Eigen::MatrixXi EV, EF, x;
-		igl::edge_topology(V, F, EV, EF, x);
-		directional::dual_cycles(V, F, EV, EF, basisCycleMat);
+		igl::edge_flaps(F, EV, x, EF, x);
+		directional::dual_cycles(F, EV, EF, basisCycleMat);
 	}
 }
 #endif
