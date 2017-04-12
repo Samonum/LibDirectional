@@ -6,6 +6,7 @@
 #include <directional/adjustment_to_representative.h>
 #include <directional/representative_to_adjustment.h>
 #include <directional/singularities.h>
+#include <directional/read_trivial_field.h>
 #include <directional/principal_matching.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
@@ -60,7 +61,7 @@ void draw_singularities()
 	viewer.data.set_colors(C);
 }
 
-void drawField()
+void draw_field()
 {
 	double e;
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField, e);
@@ -73,11 +74,18 @@ void drawField()
 	directional::principal_matching(meshV, meshF, EV, EF, FE, representative, N, matching);
 	directional::singularities(cycles, matching, calculatedIndices);
 
-	Eigen::MatrixXd color;
 	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 	draw_singularities();
+}
+
+void update_mesh()
+{
+	igl::edge_topology(meshV, meshF, EV, FE, EF);
+	igl::per_face_normals(meshV, meshF, norm);
+
+	directional::dual_cycles(meshF, EV, EF, cycles);
 }
 
 bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
@@ -92,6 +100,18 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		sing_mode = 1;
 		draw_singularities();
 		break;
+	case 'S':
+		if (directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0))
+			std::cout << "Saved mesh" << std::endl;
+		else
+			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
+		break;
+	case 'L':
+		double x;
+		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
+		update_mesh();
+		draw_field();
+		break;
 	}
 	return true;
 }
@@ -102,8 +122,6 @@ int main()
 	viewer.callback_key_down = &key_down;
 	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
 
-	igl::edge_topology(meshV, meshF, EV, FE, EF);
-	igl::per_face_normals(meshV, meshF, norm);
 
 	positiveIndices << .25, 0, 0,
 					   .5,  0, 0,
@@ -116,12 +134,9 @@ int main()
 					   0, 1,   0;
 
 
-
-	directional::dual_cycles(meshV, meshF, EV, EF, cycles);
+	update_mesh();
 	indices = Eigen::VectorXd::Zero(cycles.rows());
-	indices[20] = N;
-	indices[120] = -2*N;
-	indices[220] = N;
-	drawField();
+	indices[220] = -N;
+	draw_field();
 	viewer.launch();
 }
