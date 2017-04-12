@@ -35,6 +35,8 @@ int ring1 = 200;
 
 bool drag = false;
 
+
+// Should be replaced by multi-mesh viewer once it is merged into igl:master
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
 {
 	V.resize(VA.rows() + VB.rows(), VA.cols());
@@ -45,12 +47,14 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 
 void calculate_field()
 {
+	//Calculate the field
 	double e;
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField, e);
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 
 	std::cout << e << std::endl;
 
+	// Sum all non-generator indices and check if they add up to N*Euler
 	int sum = round(indices.head(indices.size() - generators).sum());
 	if (euler*N != sum)
 	{
@@ -58,21 +62,22 @@ void calculate_field()
 		std::cout << "Total indices: " << sum << std::endl;
 		std::cout << "Expected: " << euler *N << std::endl;
 	}
-	Eigen::MatrixXd color;
-	color.resize(representative.rows()*N, 3);
-	color << Eigen::RowVector3d(0, 1, 0).replicate(representative.rows(), 1),
-		Eigen::RowVector3d(0, 0, 1).replicate((N - 1) *representative.rows(), 1);
-	directional::drawable_field(meshV, meshF, representative, color, N, false, fieldV, fieldF, fieldC);
+
+	// Turn the field into a drawable mesh
+	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 1, 0), N, false, fieldV, fieldF, fieldC);
 }
 
 void draw_field()
 {
+	// Draw the active cycle
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 	directional::draw_cycles(EF, cycles, Eigen::Vector3d(1, 0, 0), ring1, meshC);
 
+	// Draw the Singularities
 	Eigen::MatrixXd spheres;
 	directional::draw_singularities(meshV, indices, positiveIndices, negativeIndices, .015, singV, singF, singC);
 
+	// Merge the cycle, singularities and mesh to be able to draw them
 	Eigen::MatrixXd a;
 	Eigen::MatrixXi b;
 	ConcatMeshes(meshV, meshF, fieldV, fieldF, a, b);
@@ -90,6 +95,7 @@ void draw_field()
 		C << meshC, fieldC;
 	}
 
+	// Send data to viewer
 	viewer.data.clear();
 	viewer.data.set_face_based(true);
 	viewer.data.set_mesh(V, F);
@@ -98,7 +104,7 @@ void draw_field()
 
 void update_mesh()
 {
-
+	// Update mesh-dependent variables
 	igl::edge_topology(meshV, meshF, EV, FE, EF);
 
 	directional::dual_cycles(meshF, EV, EF, cycles);
@@ -106,7 +112,6 @@ void update_mesh()
 	igl::boundary_loop(meshF, boundaryLoops);
 	euler = meshV.rows() - EV.rows() + meshF.rows();
 	generators = cycles.rows() - meshV.rows() - boundaryLoops.size();
-
 }
 
 void paint_ring()
@@ -226,6 +231,7 @@ int main()
 	viewer.callback_mouse_down = &mouse_down;
 	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
 
+	// Set colors for Singularities
 	positiveIndices << .25, 0, 0,
 					   .5,  0, 0,
 					   .75, 0, 0,
