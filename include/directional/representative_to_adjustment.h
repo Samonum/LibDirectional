@@ -85,7 +85,7 @@ namespace directional
 		Eigen::VectorXd& adjustAngles,
 		double& globalRotation)
 	{
-		MatrixXi EV, FE, EF;
+		Eigen::MatrixXi EV, FE, EF;
 		igl::edge_topology(V, F, EV, FE, EF);
 		representative_to_adjustment(V, F, EV, FE, EF, representative, N, adjustAngles, globalRotation);
 	}

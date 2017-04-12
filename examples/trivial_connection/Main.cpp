@@ -173,14 +173,14 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		}
 		break;
 	case 'S':
-		if (directional::write_trivial_field("test", meshV, meshF, indices, N, 0))
+		if (directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0))
 			std::cout << "Saved mesh" << std::endl;
 		else
 			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
 		break;
 	case 'L':
 		double x;
-		directional::read_trivial_field("test", meshV, meshF, indices, N, x);
+		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
 		update_mesh();
 		calculate_field();
 		draw_field();
