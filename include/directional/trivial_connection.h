@@ -138,13 +138,13 @@ namespace directional
 					{
 						int b = border(EV(it.col(), 1));
 						// Substract Pi, as igl::gaussian_curvature calculates gc as 2 * PI - sum(angles)
-						cycleHolonomy(V.rows() - total + i) += gc(border(EV(it.col(), b))) - igl::PI;
-						cout << "Curvature at border vertex: " << gc(border(EV(it.col(), b))) << endl;
+						cycleHolonomy(V.rows() - total + i) += gc(EV(it.col(), b)) - igl::PI;
+						cout << "Curvature at border vertex: " << gc(EV(it.col(), b)) - igl::PI << endl;
 						//Ensure vertices won't be counted twice
 						border(EV(it.col(), b)) = 0;
 						added++;
 					}
-			cout << "Old curvature: " << temp << " " << "    New curvature: " << cycleHolonomy(V.rows() - total + i) << endl;
+			cout << "Old holonomy: " << temp << " " << "    New holonomy: " << cycleHolonomy(V.rows() - total + i) << endl;
 			i++;
 		}
 
@@ -167,7 +167,7 @@ namespace directional
 		for (int i = 1; i < columns.size(); i++)
 			if (columns[i] != columns[i - 1])
 				adjustAngles[i] = reducedAngles[columns[i - 1]];
-
+		std::cout << "Total holonomy: " << cycleHolonomy.sum() << " Prescribed holonomy:" << cycleNewCurvature.sum();
 		error = (reducedCycles*reducedAngles - (-cycleHolonomy + cycleNewCurvature)).lpNorm<Infinity>();
 	}
 
