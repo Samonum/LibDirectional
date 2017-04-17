@@ -12,12 +12,15 @@
 
 namespace directional
 {
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field on a mesh.
+	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
+	// on a mesh.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  field: Either a representative or a raw vector field.
-	//  color: An array of either 1 by 3 color values for each vector, #F by 3 colors for each individual directional or #F*N by 3 colours for each individual vector, ordered by #F times vector 1, followed by #F times vector 2 etc.
+	//  color: An array of either 1 by 3 color values for each vector, #F by 3 colors for each 
+	//         individual directional or #F*N by 3 colours for each individual vector, ordered 
+	//         by #F times vector 1, followed by #F times vector 2 etc.
 	//  N: The degree of the field.
 	//  width: The width of each vector in the vector field.
 	//  length: The width of each vector in the vector field, respective to each vector's length.
@@ -85,12 +88,15 @@ namespace directional
 		fieldF << Fc, Fs;
 	}
 
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field on a mesh.
+	// Returns a list of faces, vertices and colour values that can be used to draw a vector field
+	// on a mesh.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  field: Either a representative or a raw vector field.
-	//  color: An array of either 1 by 3 color values for each vector, #F by 3 colors for each individual directional or #F*N by 3 colours for each individual vector, ordered by #F times vector 1, followed by #F times vector 2 etc.
+	//  color: An array of either 1 by 3 color values for each vector, #F by 3 colors for each 
+	//         individual directional or #F*N by 3 colours for each individual vector, ordered 
+	//         by #F times vector 1, followed by #F times vector 2 etc.
 	//  N: The degree of the field.
 	//  colorPerVertex: The coloring mode used to draw the meash.
 	// Outputs:

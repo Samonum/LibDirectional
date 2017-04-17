@@ -4,31 +4,32 @@
 #include <directional/representative_to_raw.h>
 #include <igl/local_basis.h>
 #include <igl/parallel_transport_angles.h>
+#include <igl/edge_topology.h>
 #include <Eigen/Core>
 
 namespace directional
 {
-	// Computes the raw vector field given the adjustment angles.
+	// Computes the adjustment angle field given the representative field.
 	// Inputs::
-	//  V: #V X 3 vertex coordinates.
+	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
-	//  EV: #E x 2 edges 2 vertices indices.
-	//  EF: #E X 2 edges 2 faces indices.
-	//  norm: #F normals for each face.
-	//  adjustAngles: #E angles that encode deviation from parallel transport.
+	//  EV: #E by 2 edges 2 vertices indices.
+	//  FE: #F by 3 indices of the edges surrounding a face.
+	//  EF: #E by 2 edges 2 faces indices.
+	//  representative: #F by 3 coordinates of representative vectors.
 	//  N: the degree of the field.
-	//  globalRotation: The angle between the vector on the first face and its basis in radians.
 	// Outputs:
-	//  raw: #F by 3*N matrix with all N explicit vectors of each directional.
+	//  adjustAngles: #E angles that encode deviation from parallel transport.
+	//  globalRotation: The angle between the vector on the first face and its basis in radians.
 	IGL_INLINE void representative_to_adjustment(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
-		const Eigen::MatrixXi& EF,
 		const Eigen::MatrixXi& FE,
-		const Eigen::MatrixXd &representative,
+		const Eigen::MatrixXi& EF,
+		const Eigen::MatrixXd& representative,
 		int N,
 		Eigen::VectorXd& adjustAngles,
-		double &globalRotation)
+		double& globalRotation)
 	{
 		Eigen::MatrixXd B1, B2, B3;
 		Eigen::VectorXd local, parallel;
@@ -66,6 +67,27 @@ namespace directional
 			if (adjustAngles(i) > igl::PI/N)
 				adjustAngles(i) -= 2 * igl::PI/N;
 		}
+	}
+
+	// Computes the adjustment angle field given the representative field.
+	// Inputs::
+	//  V: #V by 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  representative: #F by 3 coordinates of representative vectors.
+	//  N: the degree of the field.
+	// Outputs:
+	//  adjustAngles: #E angles that encode deviation from parallel transport.
+	//  globalRotation: The angle between the vector on the first face and its basis in radians.
+	IGL_INLINE void representative_to_adjustment(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXd& representative,
+		int N,
+		Eigen::VectorXd& adjustAngles,
+		double& globalRotation)
+	{
+		Eigen::MatrixXi EV, FE, EF;
+		igl::edge_topology(V, F, EV, FE, EF);
+		representative_to_adjustment(V, F, EV, FE, EF, representative, N, adjustAngles, globalRotation);
 	}
 }
 

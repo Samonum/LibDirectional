@@ -36,7 +36,6 @@ namespace directional
 	}
 
 	// Computes the raw vector field given a set of representative vectors.
-	// This version recalculates the face normals every time it's called.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.

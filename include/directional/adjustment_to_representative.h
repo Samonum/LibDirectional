@@ -8,6 +8,7 @@
 #include <igl/igl_inline.h>
 #include <igl/gaussian_curvature.h>
 #include <igl/local_basis.h>
+#include <igl/edge_topology.h>
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <vector>
@@ -15,13 +16,15 @@
 
 namespace directional
 {
-	// Takes a (trivial) connection, in the form of adjustment angles that encode the change from the parallel transport, and computes a unit-norm N-rosy that conforms to this connection. The adjustment angles must
+	// Takes a (trivial) connection, in the form of adjustment angles that encode the change from the parallel transport, 
+	// and computes a unit-norm N-rosy that conforms to this connection. The adjustment angles must
 	// respect the triviality constraints within the dgree N or the results would be unpredictable
 	// Inputs:
 	//  V: #V X 3 vertex coordinates
 	//  F: #F by 3 face vertex indices
 	//  EV: #E x 2 edges 2 vertices indices
 	//  EF: #E X 2 edges 2 faces indices
+    //  B1, B2: #F by 3 matrices representing the local base of each face.
 	//  adjustAngles: #E angles that encode deviation from parallel transport
 	//  N: the degree of the field
 	//  globalRotation: The angle between the vector on the first face and its basis in radians
@@ -32,6 +35,8 @@ namespace directional
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
 		const Eigen::MatrixXi& EF,
+		const Eigen::MatrixXd& B1,
+		const Eigen::MatrixXd& B2,
 		const Eigen::VectorXd& adjustAngles,
 		const int N,
 		double globalRotation,
@@ -43,8 +48,6 @@ namespace directional
 
 		Complex globalRot = exp(Complex(0, globalRotation));
 		MatrixXcd edgeRep(EF.rows(), 2);
-		MatrixXd B1, B2, B3;
-		igl::local_basis(V, F, B1, B2, B3);
 		for (int i = 0; i<EF.rows(); i++) {
 			for (int j = 0; j<2; j++) {
 				if (EF(i, j) == -1)
@@ -93,6 +96,55 @@ namespace directional
 	}
 
 
+	// Takes a (trivial) connection, in the form of adjustment angles that encode the change from the parallel transport, 
+	// and computes a unit-norm N-rosy that conforms to this connection. The adjustment angles must
+	// respect the triviality constraints within the dgree N or the results would be unpredictable
+	// Inputs:
+	//  V: #V X 3 vertex coordinates
+	//  F: #F by 3 face vertex indices
+	//  EV: #E x 2 edges 2 vertices indices
+	//  EF: #E X 2 edges 2 faces indices
+	//  adjustAngles: #E angles that encode deviation from parallel transport
+	//  N: the degree of the field
+	//  globalRotation: The angle between the vector on the first face and its basis in radians
+	// Outputs:
+	//  representative: #F x 3 representative vectors within the tangent space (supporting plane) of the respetive face.
+	IGL_INLINE void adjustment_to_representative(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXi& EV,
+		const Eigen::MatrixXi& EF,
+		const Eigen::VectorXd& adjustAngles,
+		const int N,
+		double globalRotation,
+		Eigen::MatrixXd& representative)
+	{
+		Eigen::MatrixXd B1, B2, x;
+		igl::local_basis(V, F, B1, B2, x);
+		directional::adjustment_to_representative(V, F, EV, EF, B1, B2, adjustAngles, N, globalRotation, representative);
+	}
+
+	// Takes a (trivial) connection, in the form of adjustment angles that encode the change from the parallel transport, 
+	// and computes a unit-norm N-rosy that conforms to this connection. The adjustment angles must
+	// respect the triviality constraints within the dgree N or the results would be unpredictable
+	// Inputs:
+	//  V: #V X 3 vertex coordinates
+	//  F: #F by 3 face vertex indices
+	//  adjustAngles: #E angles that encode deviation from parallel transport
+	//  N: the degree of the field
+	//  globalRotation: The angle between the vector on the first face and its basis in radians
+	// Outputs:
+	//  representative: #F x 3 representative vectors within the tangent space (supporting plane) of the respetive face.
+	IGL_INLINE void adjustment_to_representative(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::VectorXd& adjustAngles,
+		const int N,
+		double globalRotation,
+		Eigen::MatrixXd& representative)
+	{
+		Eigen::MatrixXi EV, x, EF;
+		igl::edge_topology(V, F, EV, x, EF);
+		directional::adjustment_to_representative(V, F, EV, EF, adjustAngles, N, globalRotation, representative);
+	}
 }
 
 #endif
