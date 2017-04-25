@@ -52,7 +52,7 @@ void calculate_field()
 	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField, e);
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 
-	std::cout << e << std::endl;
+	std::cout << "Error: " << e << std::endl;
 
 	// Sum all non-generator indices and check if they add up to N*Euler
 	int sum = round(indices.head(indices.size() - generators).sum());
