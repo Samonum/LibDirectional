@@ -64,7 +64,7 @@ void draw_singularities()
 void draw_field()
 {
 	double e;
-	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField, e);
+	directional::trivial_connection(meshV, meshF, cycles, indices, N, adjustmentField, e);
 	std::cout << "error: " << e << std::endl;
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 	double r;
@@ -100,13 +100,18 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		sing_mode = 1;
 		draw_singularities();
 		break;
-	case 'S':
-		if (directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0))
+	case 'W':
+		bool saved;
+		if (sing_mode)
+			saved = directional::write_trivial_field("../../data/test", meshV, meshF, calculatedIndices, N, 0);
+		else
+			saved = directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0);
+		if (saved)
 			std::cout << "Saved mesh" << std::endl;
 		else
 			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
 		break;
-	case 'L':
+	case 'R':
 		double x;
 		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
 		update_mesh();
@@ -120,6 +125,13 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 int main()
 {
 	viewer.callback_key_down = &key_down;
+
+	std::cout <<
+		"  W       Save mesh+indices" << std::endl <<
+		"  R       Read mesh+indices" << std::endl <<
+		"  1       Loaded indices" << std::endl <<
+		"  2       Calculated indices" << std::endl;
+
 	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
 
 

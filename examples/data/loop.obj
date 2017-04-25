@@ -1,7 +1,6 @@
 # Blender v2.78 (sub 0) OBJ File: ''
 # www.blender.org
 mtllib loop.mtl
-o Plane
 v -1.001734 0.023837 1.007581
 v 0.998266 0.023837 1.007581
 v -1.001734 0.023837 -0.992419
