@@ -6,6 +6,7 @@
 #include <directional/adjustment_to_representative.h>
 #include <directional/draw_cycles.h>
 #include <directional/read_trivial_field.h>
+#include <directional/singularities.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -31,7 +32,7 @@ int euler;
 int generators;
 
 int N = 4;
-int ring1 = 200;
+int ring1 = 290;
 
 bool drag = false;
 
@@ -49,10 +50,10 @@ void calculate_field()
 {
 	//Calculate the field
 	double e;
-	directional::trivial_connection(meshV, meshF, EV, EF, cycles, indices, N, adjustmentField, e);
+	directional::trivial_connection(meshV, meshF, cycles, indices, N, adjustmentField, e);
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 
-	std::cout << "Error: " << e << std::endl;
+	std::cout << "Field error: " << e << std::endl;
 
 	// Sum all non-generator indices and check if they add up to N*Euler
 	int sum = round(indices.head(indices.size() - generators).sum());
@@ -172,13 +173,13 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 			paint_ring();
 		}
 		break;
-	case 'S':
+	case 'W':
 		if (directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0))
 			std::cout << "Saved mesh" << std::endl;
 		else
 			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
 		break;
-	case 'L':
+	case 'R':
 		double x;
 		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
 		update_mesh();
@@ -229,7 +230,19 @@ int main()
 {
 	viewer.callback_key_down = &key_down;
 	viewer.callback_mouse_down = &mouse_down;
-	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
+
+	std::cout <<
+		"  W       Save mesh+indices" << std::endl <<
+		"  R       Read mesh+indices" << std::endl <<
+		"  L-bttn  Select cycle" << std::endl <<
+		"  D       Disable mouse select" << std::endl <<
+		"  B       Loop through border cycles" << std::endl <<
+		"  G       Loop through generator cycles" << std::endl <<
+		"  C       Calculate field" << std::endl <<
+		"  +       Increase index" << std::endl <<
+		"  -       Decrease index" << std::endl;
+
+	igl::readOBJ("../../data/chipped-torus.obj", meshV, meshF);
 
 	// Set colors for Singularities
 	positiveIndices << .25, 0, 0,
@@ -244,7 +257,9 @@ int main()
 
 	update_mesh();
 
+	//Initialize singularities, indices should add up to N * the Euler characteristic.
 	indices = Eigen::VectorXd::Zero(cycles.rows());
+	indices(290) = -N;
 
 	calculate_field();
 	draw_field();

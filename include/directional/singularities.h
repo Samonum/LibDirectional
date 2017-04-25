@@ -10,6 +10,7 @@
 #include <igl/parallel_transport_angles.h>
 #include <igl/per_face_normals.h>
 #include <igl/parallel_transport_angles.h>
+#include <directional/cycle_holonomy.h>
 
 #include <Eigen/Core>
 #include <vector>
@@ -35,21 +36,16 @@ namespace directional
 	// Inputs:
 	//   basisCycleMat: #basisCycles by #E the oriented basis cycles around which the singularities are measured
 	//   adjustAngles: #E angles that encode deviation from parallel transport.
-	//   parallelTransportAngles: #E angles used ffor parallel transport between each edge.
+	//   cycleHolonomy: #basisCycles angle defect for each basis cycle e.g. from directional::cycle_holonomy.
 	//   N: the degree of the field
 	// Outputs:
 	//   singularities: #basisCycles the index around each cycle.
 	IGL_INLINE void singularities(const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat,
 		const Eigen::VectorXd& adjustAngles,
-		const Eigen::VectorXd& parallelTransportAngles,
+		const Eigen::VectorXd& cycleHolonomy,
 		int N,
 		Eigen::VectorXd& singularities)
 	{
-		Eigen::VectorXd cycleHolonomy = basisCycleMat*parallelTransportAngles;
-		for (int i = 0; i < cycleHolonomy.size(); i++) {
-			while (cycleHolonomy(i) >= M_PI) cycleHolonomy(i) -= 2.0*M_PI;
-			while (cycleHolonomy(i) < -M_PI) cycleHolonomy(i) += 2.0*M_PI;
-		}
 
 		singularities = ((basisCycleMat * adjustAngles + cycleHolonomy).array() / (2.*igl::PI / N));
 	}
@@ -69,15 +65,9 @@ namespace directional
 		int N,
 		Eigen::VectorXd& singularities)
 	{
-		Eigen::MatrixXi x, FE, EF;
-		Eigen::MatrixXd norm;
-		Eigen::VectorXd parallelTransportAngles;
-		
-		igl::edge_topology(V, F, x, FE, EF);
-		igl::per_face_normals(V, F, norm);
-
-		igl::parallel_transport_angles(V, F, norm, EF, FE, parallelTransportAngles);
-		directional::singularities(basisCycleMat, adjustAngles, parallelTransportAngles, N, singularities);
+		Eigen::VectorXd cycleHolonomy;
+		cycle_holonomy(V, F, basisCycleMat, cycleHolonomy);
+		directional::singularities(basisCycleMat, adjustAngles, cycleHolonomy, N, singularities);
 	}
 
 }

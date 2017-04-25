@@ -1,7 +1,6 @@
 # Blender v2.78 (sub 0) OBJ File: ''
 # www.blender.org
 mtllib half-torus.mtl
-o Torus
 v 0.105978 0.262811 -1.250285
 v 0.105978 0.387811 -1.216791
 v 0.105978 0.479317 -1.125285

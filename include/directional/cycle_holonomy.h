@@ -14,9 +14,7 @@
 
 namespace directional
 {
-	// Computes the adjustment angles to form a trivial connection according to given cone curvatures (or singularity indices) around basis cycles. 
-	// In case the sum of curvature is not consistent with the topology, the system is solved in least squares and unexpected singularities may appear elsewhere. 
-	// The output is the modification to the parallel transport.
+	// Computes the angle defect for each basis cycle in the basis cycle matrix. Contractable cycles around border vertices are set to 0.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates
 	//  F: #F by 3 face vertex indices
@@ -24,13 +22,10 @@ namespace directional
 	//  EV: #E by 2 indices of the vertices surrounding each edge
 	//  B1, B2: #F by 3 matrices representing the local base of each face.
 	//  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
-	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of igl::basis_cycles())
-	//  indices: #basisCycles the index around each cycle. They should add up to N*Euler_characteristic of the mesh.
-	//  N: the degree of the field. The curvature of a cycle is measured by (singIndex/N)*(2*pi) (can be negative)
+	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of directional::basis_cycles())
+	//				 followed by the border cycles.
 	// Outputs:
-	//  adjustAngles: the difference between the parallel transport and the modified one.
-	//  error: gives the total error of the field. If this is not approximately 0 your singularities probably don't add up properly.
-	//TODO: work with boundaries
+	//  cycleHolonomy: the angle defect for each basis cycle.
 	IGL_INLINE void cycle_holonomy(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
@@ -83,8 +78,8 @@ namespace directional
 		int i = 0, added = 0, total = count(border.begin(), border.end(), true);
 		while (added < total)
 		{
-			double temp = cycleHolonomy(V.rows() - total + i);
-			cycleHolonomy(V.rows() - total + i) = 0;
+			double temp = cycleHolonomy(V.rows() + i);
+			cycleHolonomy(V.rows() + i) = 0;
 			//Loop over boundary cycles
 			for (SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(basisCycles, V.rows() + i); it; ++it)
 				if (it.value())
@@ -93,16 +88,35 @@ namespace directional
 					if (border[EV(it.col(), b)])
 					{
 						// Substract Pi, as igl::gaussian_curvature calculates gc as 2 * PI - sum(angles)
-						cycleHolonomy(V.rows() - total + i) += gc(EV(it.col(), b)) - igl::PI;
-						cout << "Curvature at border vertex: " << gc(EV(it.col(), b)) - igl::PI << endl;
+						cycleHolonomy(V.rows() + i) += gc(EV(it.col(), b)) - igl::PI;
 						//Ensure vertices won't be counted twice
 						border[EV(it.col(), b)] = false;
 						added++;
 					}
 				}
-			cout << "Old holonomy: " << temp << " " << "    New holonomy: " << cycleHolonomy(V.rows() - total + i) << endl;
 			i++;
 		}
+	}
+
+	// Computes the angle defect for each basis cycle in the basis cycle matrix. Contractable cycles around border vertices are set to 0.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates
+	//  F: #F by 3 face vertex indices
+	//  basisCycles: #basisCycles X #E the oriented (according to EF) basis cycles around which the curvatures are measured
+	//               the basis cycles must be arranged so that the first |V| are the vertex cycles (for instance, the result of directional::basis_cycles())
+	//				 followed by the border cycles.
+	// Outputs:
+	//  cycleHolonomy: the angle defect for each basis cycle.
+	IGL_INLINE void cycle_holonomy(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,
+		Eigen::VectorXd& cycleHolonomy)
+	{
+		Eigen::MatrixXi EV, x, EF;
+		igl::edge_topology(V, F, EV, x, EF);
+		Eigen::MatrixXd B1, B2, B3;
+		igl::local_basis(V, F, B1, B2, B3);
+		cycle_holonomy(V, F, EV, EF, B1, B2, basisCycles, cycleHolonomy);
 	}
 }
 
