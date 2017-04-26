@@ -3,50 +3,50 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can
 // obtain one at http://mozilla.org/MPL/2.0/.
+#ifndef COMPLEX_FIELD_H
+#define COMPLEX_FIELD_H
+
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 #include <Eigen/Eigenvalues>
+#include <igl/triangle_triangle_adjacency.h>
+#include <igl/local_basis.h>
 #include <iostream>
 
 namespace directional
 {
-	std::complex<double> find_root(std::complex<double> c0, int n)
-	{
-		// Find the roots of p(t) = (t - c0)^n using
-		// https://en.wikipedia.org/wiki/Companion_matrix
-		Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(n, n);
-		for (int i = 1; i < n; ++i)
-			M(i, i - 1) = std::complex<double>(1, 0);
-		M(0, n - 1) = c0;
-		return M.eigenvalues()(0);
-	}
-
-	void complex_field
+	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
+	// on a mesh.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  TT: #F by 3 Triangle-triangle adjecencies.
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  N: The degree of the field..
+	// Outputs:
+	//  complex: Representation of the field as complex double
+	IGL_INLINE void complex_field
 	(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
 		const Eigen::MatrixXi& F,          // Faces
 		const Eigen::MatrixXi& TT,         // Adjacency triangle-triangle
+		const Eigen::MatrixXd& B1,
+		const Eigen::MatrixXd& B2,
 		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
 		const Eigen::MatrixXd& soft_value, // Soft constraints 3d vectors
-		const int n,                 // Degree of the n-rosy field
-		Eigen::MatrixXd& representative
+		const int N,                 // Degree of the n-rosy field
+		Eigen::MatrixXcd& complex
 	)
 	{
 		using namespace std;
 		using namespace Eigen;
-		assert(soft_id.size() > 0); // One constraint is necessary to make the solution unique
-
-		Matrix<double, Dynamic, 3> T1(F.rows(), 3), T2(F.rows(), 3);
-
-		// Compute the local reference systems for each face
-		for (unsigned i = 0; i < F.rows(); ++i)
+		if (soft_id.size() == 0)
 		{
-			Vector3d e1 = V.row(F(i, 1)) - V.row(F(i, 0));
-			Vector3d e2 = V.row(F(i, 2)) - V.row(F(i, 0));
-			T1.row(i) = e1.normalized();
-			T2.row(i) = T1.row(i).cross(T1.row(i).cross(e2)).normalized();
+			complex = MatrixXcd::Constant(F.rows(), 1, std::complex<double>());
+			return;
 		}
+
 
 		// Build the sparse matrix, with an energy term for each edge
 		std::vector< Triplet<std::complex<double> > > t;
@@ -68,14 +68,14 @@ namespace directional
 
 				// Compute the complex representation of the common edge
 				Vector3d e = (V.row(F(f, (ei + 1) % 3)) - V.row(F(f, ei)));
-				Vector2d vef = Vector2d(e.dot(T1.row(f)), e.dot(T2.row(f))).normalized();
+				Vector2d vef = Vector2d(e.dot(B1.row(f)), e.dot(B2.row(f))).normalized();
 				std::complex<double> ef(vef(0), vef(1));
-				Vector2d veg = Vector2d(e.dot(T1.row(g)), e.dot(T2.row(g))).normalized();
+				Vector2d veg = Vector2d(e.dot(B1.row(g)), e.dot(B2.row(g))).normalized();
 				std::complex<double> eg(veg(0), veg(1));
 
 				// Add the term conj(f)^n*ui - conj(g)^n*uj to the energy matrix
-				t.push_back(Triplet<std::complex<double> >(count, f, std::pow(std::conj(ef), n)));
-				t.push_back(Triplet<std::complex<double> >(count, g, -1.*std::pow(std::conj(eg), n)));
+				t.push_back(Triplet<std::complex<double> >(count, f, std::pow(std::conj(ef), N)));
+				t.push_back(Triplet<std::complex<double> >(count, g, -1.*std::pow(std::conj(eg), N)));
 
 				++count;
 			}
@@ -87,9 +87,9 @@ namespace directional
 		{
 			int f = soft_id(r);
 			Vector3d v = soft_value.row(r);
-			std::complex<double> c(v.dot(T1.row(f)), v.dot(T2.row(f)));
+			std::complex<double> c(v.dot(B1.row(f)), v.dot(B2.row(f)));
 			t.push_back(Triplet<std::complex<double> >(count, f, sqrt(lambda)));
-			tb.push_back(Triplet<std::complex<double> >(count, 0, std::pow(c, n) * std::complex<double>(sqrt(lambda), 0)));
+			tb.push_back(Triplet<std::complex<double> >(count, 0, std::pow(c, N) * std::complex<double>(sqrt(lambda), 0)));
 			++count;
 		}
 
@@ -102,15 +102,34 @@ namespace directional
 		SimplicialLDLT< SparseMatrixXcd > solver;
 		solver.compute(A.adjoint()*A);
 		assert(solver.info() == Success);
-		MatrixXcd u = solver.solve(A.adjoint()*MatrixXcd(b));
+		complex = solver.solve(A.adjoint()*MatrixXcd(b));
 		assert(solver.info() == Success);
+	}
 
-		// Convert the interpolated polyvector into Euclidean vectors
-		representative.resize(F.rows(), 3);
-		for (int f = 0; f < F.rows(); ++f)
-		{
-			std::complex<double> root = find_root(u(f), n);
-			representative.row(f) = T1.row(f) * root.real() + T2.row(f) * root.imag();
-		}
+
+	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
+	// on a mesh.
+	// Inputs:
+	//  V: #V X 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  N: The degree of the field..
+	// Outputs:
+	//  complex: Representation of the field as complex double
+	IGL_INLINE void complex_field
+	(
+		const Eigen::MatrixXd& V,          // Vertices of the mesh
+		const Eigen::MatrixXi& F,          // Faces
+		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
+		const Eigen::MatrixXd& soft_value, // Soft constraints 3d vectors
+		const int N,                 // Degree of the n-rosy field
+		Eigen::MatrixXcd& complex
+	)
+	{
+		Eigen::MatrixXi TT;
+		igl::triangle_triangle_adjacency(F, TT);
+		Eigen::MatrixXd B1, B2, x;
+		igl::local_basis(V, F, B1, B2, x);
+		complex_field(V, F, TT, B1, B2, soft_id, soft_value, N, complex);
 	}
 }
+#endif
