@@ -1,6 +1,8 @@
 #include <iostream>
 #include <directional/drawable_field.h>
 #include <directional/complex_field.h>
+#include <directional/complex_to_representative.h>
+#include <directional/complex_to_raw.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -14,6 +16,7 @@
 Eigen::VectorXi cIDs;
 Eigen::MatrixXi F, fieldF, meshF, TT;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, representative, cValues;
+Eigen::MatrixXcd complex;
 igl::viewer::Viewer viewer;
 
 
@@ -30,7 +33,8 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 
 void draw_field()
 {
-	directional::complex_field(meshV, meshF, TT, cIDs, cValues, N, representative);
+	directional::complex_field(meshV, meshF, TT, cIDs, cValues, N, complex);
+	directional::complex_to_representative(meshV, meshF, complex, N, representative);
 	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
