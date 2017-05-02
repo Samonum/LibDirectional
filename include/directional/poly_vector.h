@@ -3,13 +3,14 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can
 // obtain one at http://mozilla.org/MPL/2.0/.
-#ifndef COMPLEX_FIELD_H
-#define COMPLEX_FIELD_H
+#ifndef POLY_VECTOR_H
+#define POLY_VECTOR_H
 
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 #include <Eigen/Eigenvalues>
+#include <unsupported/Eigen/Polynomials>
 #include <igl/triangle_triangle_adjacency.h>
 #include <igl/local_basis.h>
 #include <iostream>
@@ -26,7 +27,7 @@ namespace directional
 	//  N: The degree of the field..
 	// Outputs:
 	//  complex: Representation of the field as complex double
-	IGL_INLINE void complex_field
+	IGL_INLINE void poly_vector
 	(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
 		const Eigen::MatrixXi& F,          // Faces
@@ -86,10 +87,20 @@ namespace directional
 		for (int r = 0; r < soft_id.size(); ++r)
 		{
 			int f = soft_id(r);
-			Vector3d v = soft_value.row(r);
-			std::complex<double> c(v.dot(B1.row(f)), v.dot(B2.row(f)));
 			t.push_back(Triplet<std::complex<double> >(count, f, sqrt(lambda)));
-			tb.push_back(Triplet<std::complex<double> >(count, 0, std::pow(c, N) * std::complex<double>(sqrt(lambda), 0)));
+			Eigen::RowVectorXcd roots(N);
+			for (int i = 1; i < N; i++)
+			{
+				Vector3d v = soft_value.block<1, 3>(r, i*3);
+				std::complex<double> c(v.dot(B1.row(f)), v.dot(B2.row(f)));
+				roots(i) = c;
+			}
+			Eigen::VectorXcd poly;
+			roots_to_monicPolynomial(roots, poly);
+			for (int i = 1; i < N; i++)
+			{
+				tb.push_back(Triplet<std::complex<double> >(count, i, poly(i) * std::complex<double>(sqrt(lambda), 0)));
+			}
 			++count;
 		}
 
@@ -97,7 +108,7 @@ namespace directional
 		typedef SparseMatrix<std::complex<double>> SparseMatrixXcd;
 		SparseMatrixXcd A(count, F.rows());
 		A.setFromTriplets(t.begin(), t.end());
-		SparseMatrixXcd b(count, 1);
+		SparseMatrixXcd b(count, N);
 		b.setFromTriplets(tb.begin(), tb.end());
 		SimplicialLDLT< SparseMatrixXcd > solver;
 		solver.compute(A.adjoint()*A);
@@ -115,7 +126,7 @@ namespace directional
 	//  N: The degree of the field..
 	// Outputs:
 	//  complex: Representation of the field as complex double
-	IGL_INLINE void complex_field
+	IGL_INLINE void poly_vector
 	(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
 		const Eigen::MatrixXi& F,          // Faces
@@ -129,7 +140,7 @@ namespace directional
 		igl::triangle_triangle_adjacency(F, TT);
 		Eigen::MatrixXd B1, B2, x;
 		igl::local_basis(V, F, B1, B2, x);
-		complex_field(V, F, TT, B1, B2, soft_id, soft_value, N, complex);
+		poly_vector(V, F, TT, B1, B2, soft_id, soft_value, N, complex);
 	}
 }
 #endif
