@@ -31,7 +31,7 @@ The LibDirectional `dual_cycles()` method can calculate the proper basis cycles 
 
 ### Singularities
 
-The singularities are described as a Eigen VectorXi containing the singularity index of each basis cycle represents a 1/N rotation when following a vector around a particular cycle. In order to create a smooth field it is required that the indices of all singularities add up to N * the euler characteristic of the mesh. 
+The singularities are described as a Eigen::VectorXd containing the singularity index of each basis cycle represents a 1/N rotation when following a vector around a particular cycle. In order to create a smooth field it is required that the indices of all singularities add up to N * the euler characteristic of the mesh. 
 
 ### Pre-calculations: Cycle Holonomy and Solver
 
@@ -56,7 +56,7 @@ igl::local_basis(V, F, B1, B2, B3);
 directional::dual_cycles(F, EV, EF, cycles);
 
 //Set indices, should add up to N * the euler characteristic
-Eigen::VectorXi indices = Eigen::VectorXd::Zero(cycles.rows());
+Eigen::VectorXd indices = Eigen::VectorXd::Zero(cycles.rows());
 indices[10] = N;
 indices[20] = N;
 
