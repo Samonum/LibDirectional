@@ -12,7 +12,7 @@ Libdirectional uses several different representations to describe vector fields.
 | **Representative**    | \|F\| by 3 double matrix representing the first vector in a directional, only available for N-rosies                                     |
 | **Adjustment** Angles | \|E\| by 1 double matrix representing the rotation between vectors on two neighbouring triangles, used in combination with a global rotation to uniquely define the field, only available for N-rosies               |
 
-Libdirectional provides a number of conversion functions to switch between different forms of representation. Each of the functions is of the form \<method 1>\_to\_\<method 2>, where \<method 1> and \<method 2> are the bold parts of the method name in the above table in lower cacse. e.g. `adjustment\_to\_raw()`
+Libdirectional provides a number of conversion functions to switch between different forms of representation. Each of the functions is of the form \<method 1>\_to\_\<method 2>, where \<method 1> and \<method 2> are the bold parts of the method name in the above table in lower cacse. e.g. `adjustment_to_raw()`
 
 For N-rosies you will most likely work primarily with the representative and adjustment angle representation, using the raw representation mostly for drawing.
 
