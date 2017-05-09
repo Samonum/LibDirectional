@@ -31,7 +31,9 @@ The LibDirectional `dual_cycles()` method can calculate the proper basis cycles 
 
 ### Singularities
 
-The singularities are described as a Eigen::VectorXd containing the singularity index of each basis cycle represents a 1/N rotation when following a vector around a particular cycle. In order to create a smooth field it is required that the indices of all singularities add up to N * the euler characteristic of the mesh. 
+The singularities are described as an `Eigen::VectorXd` containing the singularity index of each basis cycle represents a 1/N rotation when following a vector around a particular cycle. In order to create a smooth field it is required that the indices of all singularities add up to N * the euler characteristic of the mesh and the indices are integers.
+
+The *Singularities* example shows how one can calculate singularities given a vector field using the matching between neighbouring faces. Due to sampling issues the found singularities differ from the given singularities in most cases.
 
 ### Pre-calculations: Cycle Holonomy and Solver
 
@@ -40,10 +42,13 @@ To speed up field calculations it is possible to pre-calculate the cycle holonom
 To calculate the field LibDirectional uses the Eigen::SimplicialLDLT solver. This solver calculates the field in 2 steps, the first of which being solely dependant on the structure of the mesh, therefore it is possible to reuse this step as long as the mesh stays the same. To do so simply create a solver object and pass it into the `trivial_connection()` function.
 
 
-### Example
+### Examples
+The *trivial_connection* example contains a small example program which allows picking basis cycles and altering their singularity index to see how this affects the field. 
+
 Do all pre-calculations and generate a 4-rosy field given the vertices V and faces F of a mesh. Calculation of cycle holonomy and creation of the solver are optional, but will speed up subsequential field calculations for the same mesh.
 
 ```cpp
+//Degree of the field (number of vectors within each directional)
 int N = 4;
 
 Eigen::MatrixXi EV, FE, EF;
@@ -55,11 +60,6 @@ igl::local_basis(V, F, B1, B2, B3);
 //Calculate the basis cycles
 directional::dual_cycles(F, EV, EF, cycles);
 
-//Set indices, should add up to N * the euler characteristic
-Eigen::VectorXd indices = Eigen::VectorXd::Zero(cycles.rows());
-indices[10] = N;
-indices[20] = N;
-
 //Calculate cycle holonomy
 Eigen::MatrixXd cycleHolonomy;
 cycle_holonomy(V, F, EV, EF, B1, B2, cycles, cycleHolonomy);
@@ -67,11 +67,17 @@ cycle_holonomy(V, F, EV, EF, B1, B2, cycles, cycleHolonomy);
 //Initialise solver
 Eigen::SimplicialLDLT<Eigen::SparseMatrix<double> > solver;
 
+//Set indices, should add up to N * the euler characteristic
+Eigen::VectorXd indices = Eigen::VectorXd::Zero(cycles.rows());
+indices[10] = N;
+indices[20] = N;
+
 //Calculate field
 Eigen::MatrixXd adjustAngles; // Field in the form of Adjustment Angles
 double error;
 trivial_connection(V, F, basisCycles, indices, cycleHolonomy, solver, N, adjustAngles, error);
-```
+``
+
 
 ### IGL\_INLINE void representative\_to\_raw(const Eigen::MatrixXd& norm, const Eigen::MatrixXd& representative, Eigen::MatrixXd& raw, const int N)
 Computes the raw vector field given a set of representative vectors.
