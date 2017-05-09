@@ -43,7 +43,7 @@ namespace directional
 			Eigen::MatrixXcd M = Eigen::MatrixXcd::Zero(N, N);
 			for (int i = 1; i < N; ++i)
 				M(i, i - 1) = std::complex<double>(1, 0);
-			M.col(N - 1) = poly.row(f).transpose();
+			M.col(N - 1) = -poly.row(f).transpose();
 			Eigen::MatrixXcd roots = M.eigenvalues();
 			for (int i = 0; i < N; i++)
 			{
@@ -67,12 +67,12 @@ namespace directional
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXcd& complex,
 		const int N,
-		Eigen::MatrixXd& representative
+		Eigen::MatrixXd& raw
 	)
 	{
 		Eigen::MatrixXd B1, B2, x;
 		igl::local_basis(V, F, B1, B2, x);
-		complex_to_representative(B1, B2, complex, N, representative);
+		poly_to_raw(B1, B2, complex, N, raw);
 	}
 }
 #endif

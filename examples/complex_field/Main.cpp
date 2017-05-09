@@ -33,7 +33,7 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 
 void draw_field()
 {
-	directional::complex_field(meshV, meshF, TT, cIDs, cValues, N, complex);
+	directional::complex_field(meshV, meshF, cIDs, cValues, N, complex);
 	directional::complex_to_representative(meshV, meshF, complex, N, representative);
 	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);

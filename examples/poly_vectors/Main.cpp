@@ -16,12 +16,13 @@
 
 Eigen::VectorXi cIDs;
 Eigen::MatrixXi F, fieldF, meshF;
-Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, representative, cValues;
+Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, raw, cValues;
 Eigen::MatrixXcd complex;
 igl::viewer::Viewer viewer;
 
 
-int N = 2;
+int N = 4;
+int cur = 0;
 bool drag = false;
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
@@ -35,8 +36,8 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 void draw_field()
 {
 	directional::poly_vector(meshV, meshF, cIDs, cValues, N, complex);
-	directional::poly_to_raw(meshV, meshF, complex, N, representative);
-	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
+	directional::poly_to_raw(meshV, meshF, complex, N, raw);
+	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
 	for (int i = 0; i < cIDs.rows(); i++)
@@ -58,17 +59,33 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	int borders;
 	switch (key)
 	{
-	case '-':
-	case '_':
+	case '1':
+		cur = 0;
 		break;
-	case '+':
-	case '=':
+	case '2':
+		cur = std::max(1, N - 1);
+		break;
+	case '3':
+		cur = std::max(2, N - 1);
+		break;
+	case '4':
+		cur = std::max(3, N - 1);
+		break;
+	case '5':
+		cur = std::max(4, N - 1);
+		break;
+	case '6':
+		cur = std::max(5, N - 1);
 		break;
 	case 'C':
 		draw_field();
 		break;
 	case 'D':
 		drag = !drag;
+		break;
+	case 'R':
+		cIDs.resize(0);
+		cValues.resize(0, 6);
 		break;
 	/*case 'S':
 		if (directional::write_trivial_field("test", meshV, meshF, indices, N, 0))
@@ -109,9 +126,10 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		{
 			cIDs.conservativeResize(cIDs.rows() + 1);
 			cIDs(i) = fid;
-			cValues.conservativeResize(cValues.rows() + 1, 3);
+			cValues.conservativeResize(cValues.rows() + 1, 3*N);
+			cValues.row(i).fill(0);
 		}
-		cValues.row(i) = 
+		cValues.block<1, 3>(i, cur*3) =
 			 (meshV.row(meshF(fid, 0)) * bc(0) + 
 			 meshV.row(meshF(fid, 1)) * bc(1) + 
 			 meshV.row(meshF(fid, 2)) * bc(2) - 
@@ -130,11 +148,8 @@ int main()
 	viewer.callback_mouse_down = &mouse_down;
 	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
 
-	cIDs.resize(1);
-	cIDs << 10;
-	cValues.resize(1, 6);
-	cValues << (meshV.row(meshF(10, 0)) - meshV.row(meshF(10, 1))).normalized(),
-		(meshV.row(meshF(10, 1)) - meshV.row(meshF(10, 2))).normalized();
+	cIDs.resize(0);
+	cValues.resize(0, 3*N);
 
 
 	draw_field();
