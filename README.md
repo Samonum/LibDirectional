@@ -76,7 +76,7 @@ indices[20] = N;
 Eigen::MatrixXd adjustAngles; // Field in the form of Adjustment Angles
 double error;
 trivial_connection(V, F, basisCycles, indices, cycleHolonomy, solver, N, adjustAngles, error);
-``
+```
 
 
 ### IGL\_INLINE void representative\_to\_raw(const Eigen::MatrixXd& norm, const Eigen::MatrixXd& representative, Eigen::MatrixXd& raw, const int N)
