@@ -22,6 +22,7 @@ igl::viewer::Viewer viewer;
 
 int N = 4;
 bool drag = false;
+bool normalized = false;
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
 {
@@ -35,6 +36,8 @@ void draw_field()
 {
 	directional::complex_field(meshV, meshF, cIDs, cValues, N, complex);
 	directional::complex_to_representative(meshV, meshF, complex, N, representative);
+	if (normalized)
+		representative.rowwise().normalize();
 	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
@@ -57,31 +60,21 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	int borders;
 	switch (key)
 	{
-	case '-':
-	case '_':
-		break;
-	case '+':
-	case '=':
-		break;
 	case 'C':
 		draw_field();
 		break;
 	case 'D':
 		drag = !drag;
 		break;
-	/*case 'S':
-		if (directional::write_trivial_field("test", meshV, meshF, indices, N, 0))
-			std::cout << "Saved mesh" << std::endl;
-		else
-			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
-		break;
-	case 'L':
-		double x;
-		directional::read_trivial_field("test", meshV, meshF, indices, N, x);
-		update_mesh();
-		calculate_field();
+	case 'R':
+		cIDs.resize(0);
+		cValues.resize(0, 6);
 		draw_field();
-		break;*/
+		break;
+	case 'N':
+		normalized = !normalized;
+		draw_field();
+		break;
 	}
 	return true;
 }
@@ -127,15 +120,12 @@ int main()
 {
 	viewer.callback_key_down = &key_down;
 	viewer.callback_mouse_down = &mouse_down;
-	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
+	igl::readOBJ("../../data/torus.obj", meshV, meshF);
 
 	igl::triangle_triangle_adjacency(meshF, TT);
 
-	cIDs.resize(2);
-	cIDs << 10, 100;
-	cValues.resize(2, 3);
-	cValues << (meshV.row(meshF(10, 0)) - meshV.row(meshF(10, 1))).normalized(),
-		(meshV.row(meshF(100, 0)) - meshV.row(meshF(100, 1))).normalized();
+	cIDs.resize(0);
+	cValues.resize(0, 3);
 
 
 	draw_field();

@@ -20,10 +20,14 @@ Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, raw, cValues;
 Eigen::MatrixXcd complex;
 igl::viewer::Viewer viewer;
 
+//Degree of the field
+int N = 2;
 
-int N = 4;
+
+//User input variables
 int cur = 0;
 bool drag = false;
+bool normalized = false;
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
 {
@@ -37,6 +41,9 @@ void draw_field()
 {
 	directional::poly_vector(meshV, meshF, cIDs, cValues, N, complex);
 	directional::poly_to_raw(meshV, meshF, complex, N, raw);
+	if (normalized)
+		for(int n = 0; n < N; n++)
+			raw.middleCols(n*3, 3).rowwise().normalize();
 	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
@@ -86,6 +93,11 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	case 'R':
 		cIDs.resize(0);
 		cValues.resize(0, 6);
+		draw_field();
+		break;
+	case 'N':
+		normalized = !normalized;
+		draw_field();
 		break;
 	/*case 'S':
 		if (directional::write_trivial_field("test", meshV, meshF, indices, N, 0))
@@ -146,7 +158,7 @@ int main()
 {
 	viewer.callback_key_down = &key_down;
 	viewer.callback_mouse_down = &mouse_down;
-	igl::readOBJ("../../data/half-torus.obj", meshV, meshF);
+	igl::readOBJ("../../data/torus.obj", meshV, meshF);
 
 	cIDs.resize(0);
 	cValues.resize(0, 3*N);
