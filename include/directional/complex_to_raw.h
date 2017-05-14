@@ -8,13 +8,13 @@
 namespace directional
 {
 	// Computes the raw vector field given a complex field.
-	// Inputs::
+	// Inputs:
 	//  B1, B2:
 	//  B3: #F normals for each face/B3 from igl::local_base.
-	//  adjustAngles: #E angles that encode deviation from parallel transport.
 	//  N: the degree of the field.
-	// Outputs:
 	//  complex: Representation of the field as complex double
+	// Outputs:
+	//  raw: #F by 3*N matrix with all N explicit vectors of each directional in the order X,Y,Z,X,Y,Z, ...
 	IGL_INLINE void complex_to_raw(const Eigen::MatrixXd& B1,
 		const Eigen::MatrixXd& B2,
 		const Eigen::MatrixXd& B3,
@@ -28,13 +28,14 @@ namespace directional
 	}
 
 	// Computes the raw vector field given a complex field.
-	// Inputs::
+	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  adjustAngles: #E angles that encode deviation from parallel transport.
+	//  complex: Representation of the field as complex doubles
 	//  N: the degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  raw: #F by 3*N matrix with all N explicit vectors of each directional in the order X,Y,Z,X,Y,Z, ...
 	IGL_INLINE void complex_to_raw(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXcd& complex,

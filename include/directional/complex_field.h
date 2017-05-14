@@ -17,6 +17,18 @@
 namespace directional
 {
 
+	// Method to precalculate the solver for a copmplex field. Must be recalculated whenever 
+	// soft_ids changes or the mesh changes.
+	// Inputs:
+	//  V: #V by 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  TT: #F by 3 Triangle-triangle adjecencies.
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  N: The degree of the field.
+	// Outputs:
+	//  solver: A pre-computed solver. Must be recomputed if soft_id changes.
+	//  energy: The energy matrix for the given problem, must be recomputed along with the solvers.
 	IGL_INLINE void complex_field_prepare_solver(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
 		const Eigen::MatrixXi& F,          // Faces
@@ -77,6 +89,25 @@ namespace directional
 		solver.compute(A.adjoint()*A);
 	}
 
+	// Version of the complex field method that allows reusing the solver. Note that solver needs to
+	// be recalculated whenever the soft_ids change.
+	// Returns a complex field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned as a complex number representing all  
+	// vectors in a directionaland can be transformed into a representative vector field using the 
+	// complex_to_representative function or a raw field using complex_to_raw.
+	// If no constraints are given the zero field will be returned.
+	// Inputs:
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X,Y,Z.
+	//  solver: A pre-computed solver from complex_field_prepare_solvers. 
+	//           Must be recomputed if soft_id changes.
+	//  energy: The energy matrices for the given problem, must be recomputed along with the solvers.
+	//  N: The degree of the field.
+	// Outputs:
+	//  complex: The vector field represented as complex doubles.
 	IGL_INLINE void complex_field(
 		const Eigen::MatrixXd& B1,
 		const Eigen::MatrixXd& B2,
@@ -122,17 +153,25 @@ namespace directional
 
 	}
 
-
-	// Returns a field represented as complex doubles that attempts to 
+	// Version of the complex field method that allows reusing the solver. Note that solver needs to
+	// be recalculated whenever the soft_ids change.
+	// Returns a complex field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned as a complex number representing all  
+	// vectors in a directionaland can be transformed into a representative vector field using the 
+	// complex_to_representative function or a raw field using complex_to_raw.
+	// If no constraints are given the zero field will be returned.
 	// Inputs:
-	//  V: #V X 3 vertex coordinates.
+	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  TT: #F by 3 Triangle-triangle adjecencies.
 	//  B1, B2: #F by 3 matrices representing the local base of each face.
-	//  soft_id: IDs of the soft constraints 
-	//  N: The degree of the field..
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X,Y,Z.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  complex: The vector field represented as complex doubles.
 	IGL_INLINE void complex_field
 	(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
@@ -154,14 +193,23 @@ namespace directional
 	}
 
 
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
-	// on a mesh.
+	// Version of the complex field method that allows reusing the solver. Note that solver needs to
+	// be recalculated whenever the soft_ids change.
+	// Returns a complex field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned as a complex number representing all  
+	// vectors in a directionaland can be transformed into a representative vector field using the 
+	// complex_to_representative function or a raw field using complex_to_raw.
+	// If no constraints are given the zero field will be returned.
 	// Inputs:
-	//  V: #V X 3 vertex coordinates.
+	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
-	//  N: The degree of the field..
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X,Y,Z.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  complex: The vector field represented as complex doubles.
 	IGL_INLINE void complex_field
 	(
 		const Eigen::MatrixXd& V,          // Vertices of the mesh
