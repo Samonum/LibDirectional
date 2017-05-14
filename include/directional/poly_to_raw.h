@@ -17,16 +17,14 @@
 
 namespace directional
 {
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
+	// Computes the raw vector field given a complex field.
 	// on a mesh.
 	// Inputs:
-	//  V: #V X 3 vertex coordinates.
-	//  F: #F by 3 face vertex indices.
-	//  TT: #F by 3 Triangle-triangle adjecencies.
 	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  poly: Representation of a poly vector field as complex doubles.
 	//  N: The degree of the field..
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  raw: #F by 3*N matrix with all N explicit vectors of each directional in the order X,Y,Z,X,Y,Z, ...
 	IGL_INLINE void poly_to_raw
 	(
 		const Eigen::MatrixXd& B1,
@@ -53,26 +51,26 @@ namespace directional
 		}
 	}
 
-	// Takes a complex field and extracts a representative vector.
-	// on a mesh.
+	// Computes the raw vector field given a polyvector field.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
-	//  N: The degree of the field..
+	//  poly: Representation of a poly vector field as complex doubles.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  raw: #F by 3*N matrix with all N explicit vectors of each directional in the order X,Y,Z,X,Y,Z, ...
 	IGL_INLINE void poly_to_raw
 	(
 		const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
-		const Eigen::MatrixXcd& complex,
+		const Eigen::MatrixXcd& poly,
 		const int N,
 		Eigen::MatrixXd& raw
 	)
 	{
 		Eigen::MatrixXd B1, B2, x;
 		igl::local_basis(V, F, B1, B2, x);
-		poly_to_raw(B1, B2, complex, N, raw);
+		poly_to_raw(B1, B2, poly, N, raw);
 	}
 }
 #endif

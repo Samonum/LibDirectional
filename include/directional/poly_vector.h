@@ -17,17 +17,28 @@
 
 namespace directional
 {
-
+	// Method to precalculate the solvers for a poly_vector field. Must be recalculated whenever 
+	// soft_ids changes or the mesh changes.
+	// Inputs:
+	//  V: #V by 3 vertex coordinates.
+	//  F: #F by 3 face vertex indices.
+	//  TT: #F by 3 Triangle-triangle adjecencies.
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  N: The degree of the field.
+	// Outputs:
+	//  solvers: A vecetor of pre-computed solver pointers. Must be recomputed if soft_id changes.
+	//  energy: The energy matrices for the given problem, must be recomputed along with the solvers.
 	IGL_INLINE void poly_vector_prepare_solvers(
-		const Eigen::MatrixXd& V,          // Vertices of the mesh
-		const Eigen::MatrixXi& F,          // Faces
-		const Eigen::MatrixXi& TT,         // Adjacency triangle-triangle
+		const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXi& TT, 
 		const Eigen::MatrixXd& B1,
 		const Eigen::MatrixXd& B2,
-		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
-		const int N,                 // Degree of the n-rosy field
+		const Eigen::VectorXi& soft_id,
+		const int N,
 		std::vector<Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>*>& solvers,
-		std::vector<Eigen::SparseMatrix<std::complex<double>>>& As)
+		std::vector<Eigen::SparseMatrix<std::complex<double>>>& energy)
 	{
 		using namespace std;
 		using namespace Eigen;
@@ -36,8 +47,8 @@ namespace directional
 		{
 			if (solvers.size() <= n)
 				solvers.push_back(new Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>());
-			if (As.size() <= n)
-				As.push_back(Eigen::SparseMatrix<std::complex<double>>());
+			if (energy.size() <= n)
+				energy.push_back(Eigen::SparseMatrix<std::complex<double>>());
 			// Build the sparse matrix, with an energy term for each edge
 			std::vector< Triplet<std::complex<double> > > t;
 
@@ -78,35 +89,53 @@ namespace directional
 			}
 
 			// Prepare the solver
-			As[n].resize(count, F.rows());
-			As[n].setFromTriplets(t.begin(), t.end());
-			solvers[n]->compute(As[n].adjoint()*As[n]);
+			energy[n].resize(count, F.rows());
+			energy[n].setFromTriplets(t.begin(), t.end());
+			solvers[n]->compute(energy[n].adjoint()*energy[n]);
 		}
 	}
 
 
+	// Version of the poly_vector method that allows reusing the solvers. Note that solvers need to
+	// be recalculated whenever the soft_ids change.
+	// Returns a polyvector field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned in the form of a complex polynomial 
+	// and can be transformed into a raw vector field using the poly_to_raw function.
+	// If no constraints are given the zero field will be returned.
+	// Inputs:
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X1,Y1,Z1,X2,Y2,Z2,Xn,Yn,Zn.
+	//  solvers: An aray of pre-computed solver pointers from poly_vector_prepare_solvers. 
+	//           Must be recomputed if soft_id changes.
+	//  energy: The energy matrices for the given problem, must be recomputed along with the solvers.
+	//  N: The degree of the field.
+	// Outputs:
+	//  poly: Representation of the field as a complex polynomial
 	IGL_INLINE void poly_vector(
 		const Eigen::MatrixXd& B1,
 		const Eigen::MatrixXd& B2,
-		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
-		const Eigen::MatrixXd& soft_value, // Soft constraints 3d vectors
+		const Eigen::VectorXi& soft_id,
+		const Eigen::MatrixXd& soft_value,
 		const std::vector<Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>*>& solvers,
-		const std::vector<Eigen::SparseMatrix<std::complex<double>>>& As,
-		const int N,                 // Degree of the n-rosy field
-		Eigen::MatrixXcd& complex)
+		const std::vector<Eigen::SparseMatrix<std::complex<double>>>& energy,
+		const int N, 
+		Eigen::MatrixXcd& poly)
 	{
 		using namespace std;
 		using namespace Eigen;
 		if (soft_id.size() == 0)
 		{
-			complex = MatrixXcd::Constant(B1.rows(), N, std::complex<double>());
+			poly = MatrixXcd::Constant(B1.rows(), N, std::complex<double>());
 			return;
 		}
 
 		// Build the sparse matrix, with an energy term for each edge
 		std::vector< Triplet<std::complex<double> > > tb;
 
-		int count = As[0].rows() - soft_id.size();
+		int count = energy[0].rows() - soft_id.size();
 
 		// Convert the constraints into the complex polynomial coefficients and add them as soft constraints
 		double lambda = 10e6;
@@ -129,7 +158,7 @@ namespace directional
 			++count;
 		}
 
-		complex.resize(B1.rows(), N);
+		poly.resize(B1.rows(), N);
 		typedef SparseMatrix<std::complex<double>> SparseMatrixXcd;
 		SparseMatrixXcd b(count, N);
 		b.setFromTriplets(tb.begin(), tb.end());
@@ -138,38 +167,44 @@ namespace directional
 		{
 			// Solve the linear system
 			assert(solvers[n]->info() == Success);
-			complex.col(n) = solvers[n]->solve(As[n].adjoint()*MatrixXcd(b).col(n));
+			poly.col(n) = solvers[n]->solve(energy[n].adjoint()*MatrixXcd(b).col(n));
 			assert(solvers[n]->info() == Success);
 		}
 	}
 
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
-	// on a mesh.
+	// Returns a polyvector field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned in the form of a complex polynomial 
+	// and can be transformed into a raw vector field using the complex_to_polynomial function.
+	// If no constraints are given the zero field will be returned.
 	// Inputs:
-	//  V: #V X 3 vertex coordinates.
+	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  TT: #F by 3 Triangle-triangle adjecencies.
 	//  B1, B2: #F by 3 matrices representing the local base of each face.
-	//  N: The degree of the field..
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X,Y,Z.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  poly: Representation of the field as a complex polynomial
 	IGL_INLINE void poly_vector
 	(
-		const Eigen::MatrixXd& V,          // Vertices of the mesh
-		const Eigen::MatrixXi& F,          // Faces
-		const Eigen::MatrixXi& TT,         // Adjacency triangle-triangle
+		const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXi& TT,
 		const Eigen::MatrixXd& B1,
 		const Eigen::MatrixXd& B2,
-		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
-		const Eigen::MatrixXd& soft_value, // Soft constraints 3d vectors
-		const int N,                 // Degree of the n-rosy field
-		Eigen::MatrixXcd& complex
+		const Eigen::VectorXi& soft_id,
+		const Eigen::MatrixXd& soft_value,
+		const int N,
+		Eigen::MatrixXcd& poly
 	)
 	{
 		std::vector<Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>*> solvers;
 		std::vector<Eigen::SparseMatrix<std::complex<double>>> As;
 		poly_vector_prepare_solvers(V, F, TT, B1, B2, soft_id, N, solvers, As);
-		poly_vector(B1, B2, soft_id, soft_value, solvers, As, N, complex);
+		poly_vector(B1, B2, soft_id, soft_value, solvers, As, N, poly);
 		for (std::vector< Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>* >::iterator it = solvers.begin(); it != solvers.end(); ++it)
 		{
 			delete (*it);
@@ -177,29 +212,35 @@ namespace directional
 	}
 
 
-	// Returns a list of faces, vertices and colour values that can be used to draw a vector field 
-	// on a mesh.
+	// Returns a polyvector field that attempts to make each vector as parallel as possible to the
+	// example directionals given in soft_id and soft_values. Also known as "Globally Optimal" and 
+	// "As Parallel As Possible". The field will be returned in the form of a complex polynomial 
+	// and can be transformed into a raw vector field using the complex_to_polynomial function.
+	// If no constraints are given the zero field will be returned.
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
-	//  N: The degree of the field..
+	//  soft_id: The face ids of the soft constraints described in soft_value.
+	//  soft_value: The directionals on the faces indicated by soft_id around which the field is
+	//              generated. Should be in the form X,Y,Z.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  poly: Representation of the field as a complex polynomial
 	IGL_INLINE void poly_vector
 	(
-		const Eigen::MatrixXd& V,          // Vertices of the mesh
-		const Eigen::MatrixXi& F,          // Faces
-		const Eigen::VectorXi& soft_id,    // Soft constraints face ids
-		const Eigen::MatrixXd& soft_value, // Soft constraints 3d vectors
-		const int N,                 // Degree of the n-rosy field
-		Eigen::MatrixXcd& complex
+		const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::VectorXi& soft_id,
+		const Eigen::MatrixXd& soft_value,
+		const int N,
+		Eigen::MatrixXcd& poly
 	)
 	{
 		Eigen::MatrixXi TT;
 		igl::triangle_triangle_adjacency(F, TT);
 		Eigen::MatrixXd B1, B2, x;
 		igl::local_basis(V, F, B1, B2, x);
-		poly_vector(V, F, TT, B1, B2, soft_id, soft_value, N, complex);
+		poly_vector(V, F, TT, B1, B2, soft_id, soft_value, N, poly);
 	}
 }
 #endif

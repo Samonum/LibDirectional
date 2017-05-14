@@ -39,14 +39,22 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 
 void draw_field()
 {
+	// Compute the field
 	directional::poly_vector(meshV, meshF, cIDs, cValues, N, complex);
+	
+	// Convert it so it can be drawn
 	directional::poly_to_raw(meshV, meshF, complex, N, raw);
+	
+	// Normalize if wanted
 	if (normalized)
 		for(int n = 0; n < N; n++)
 			raw.middleCols(n*3, 3).rowwise().normalize();
+	
+	// Calculate the vectors, faces and colors of the field representation
 	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
+	// Merge all together
 	for (int i = 0; i < cIDs.rows(); i++)
 		meshC.row(cIDs(i)) = Eigen::RowVector3d(1, 0, 0);
 	
@@ -54,18 +62,21 @@ void draw_field()
 	C << meshC, fieldC;
 
 	ConcatMeshes(meshV, meshF, fieldV, fieldF, V, F);
+
+	// Update teh viewer
 	viewer.data.clear();
 	viewer.data.set_face_based(true);
 	viewer.data.set_mesh(V, F);
 	viewer.data.set_colors(C);
 }
 
-
+// Handle keyboard input
 bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 {
 	int borders;
 	switch (key)
 	{
+	
 	case '1':
 		cur = 0;
 		break;
@@ -84,34 +95,25 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	case '6':
 		cur = std::max(5, N - 1);
 		break;
-	case 'C':
-		draw_field();
-		break;
+	// If you want a field with N biiger than 6 insert code to access them below.
+
+	// Toggle field drawing for easier rotation
 	case 'D':
 		drag = !drag;
 		break;
+
+	// Reset the constraints
 	case 'R':
 		cIDs.resize(0);
 		cValues.resize(0, 6);
 		draw_field();
 		break;
+
+	// Toggle normalization
 	case 'N':
 		normalized = !normalized;
 		draw_field();
 		break;
-	/*case 'S':
-		if (directional::write_trivial_field("test", meshV, meshF, indices, N, 0))
-			std::cout << "Saved mesh" << std::endl;
-		else
-			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
-		break;
-	case 'L':
-		double x;
-		directional::read_trivial_field("test", meshV, meshF, indices, N, x);
-		update_mesh();
-		calculate_field();
-		draw_field();
-		break;*/
 	}
 	return true;
 }
@@ -141,6 +143,8 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 			cValues.conservativeResize(cValues.rows() + 1, 3*N);
 			cValues.row(i).fill(0);
 		}
+
+		// Calculate direction from the center of the face to the mouse
 		cValues.block<1, 3>(i, cur*3) =
 			 (meshV.row(meshF(fid, 0)) * bc(0) + 
 			 meshV.row(meshF(fid, 1)) * bc(1) + 
@@ -158,6 +162,15 @@ int main()
 {
 	viewer.callback_key_down = &key_down;
 	viewer.callback_mouse_down = &mouse_down;
+	std::cout <<
+		// Input only supported up to 6. See key_down code if you wish to use N > 6
+		"  1-"<< N <<"     chose vector." << std::endl << 
+		"  R       Reset the constraints" << std::endl <<
+		"  N       Toggle field normalization" << std::endl <<
+		"  L-bttn  place constraint" << std::endl <<
+		"  D       Toggle constraint placement" << std::endl;
+
+	// Load mesh
 	igl::readOBJ("../../data/torus.obj", meshV, meshF);
 
 	cIDs.resize(0);

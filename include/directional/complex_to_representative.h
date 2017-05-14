@@ -17,10 +17,11 @@ namespace directional
 {
 	// Takes a complex field and extracts a representative vector.
 	// Inputs:
-	//  B1, B2: #F by 3 
-	//  N: The degree of the field..
+	//  B1, B2: #F by 3 matrices representing the local base of each face.
+	//  complex: Representation of the field as complex double.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  representative: #F x 3 representative vectors within the tangent space (supporting plane) of the respetive face.
 	IGL_INLINE void complex_to_representative
 	(
 		const Eigen::MatrixXd& B1,
@@ -51,9 +52,10 @@ namespace directional
 	// Inputs:
 	//  V: #V X 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
-	//  N: The degree of the field..
+	//  complex: Representation of the field as complex double.
+	//  N: The degree of the field.
 	// Outputs:
-	//  complex: Representation of the field as complex double
+	//  representative: #F x 3 representative vectors within the tangent space (supporting plane) of the respetive face.
 	IGL_INLINE void complex_to_representative
 	(
 		const Eigen::MatrixXd& V,
