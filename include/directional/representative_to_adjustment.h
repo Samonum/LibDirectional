@@ -10,7 +10,7 @@
 namespace directional
 {
 	// Computes the adjustment angle field given the representative field.
-	// Inputs::
+	// Inputs:
 	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  EV: #E by 2 edges 2 vertices indices.
@@ -70,7 +70,7 @@ namespace directional
 	}
 
 	// Computes the adjustment angle field given the representative field.
-	// Inputs::
+	// Inputs:
 	//  V: #V by 3 vertex coordinates.
 	//  F: #F by 3 face vertex indices.
 	//  representative: #F by 3 coordinates of representative vectors.

@@ -21,7 +21,7 @@ Eigen::MatrixXcd complex;
 igl::viewer::Viewer viewer;
 
 //Degree of the field
-int N = 2;
+int N = 4;
 
 
 //User input variables
@@ -51,7 +51,7 @@ void draw_field()
 			raw.middleCols(n*3, 3).rowwise().normalize();
 	
 	// Calculate the vectors, faces and colors of the field representation
-	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
+	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0,0,1), N, directional::field_draw_flags::NONE, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
 	// Merge all together
@@ -76,24 +76,24 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	int borders;
 	switch (key)
 	{
-	
+	// Select vector 
 	case '1':
 		cur = 0;
 		break;
 	case '2':
-		cur = std::max(1, N - 1);
+		cur = std::min(1, N - 1);
 		break;
 	case '3':
-		cur = std::max(2, N - 1);
+		cur = std::min(2, N - 1);
 		break;
 	case '4':
-		cur = std::max(3, N - 1);
+		cur = std::min(3, N - 1);
 		break;
 	case '5':
-		cur = std::max(4, N - 1);
+		cur = std::min(4, N - 1);
 		break;
 	case '6':
-		cur = std::max(5, N - 1);
+		cur = std::min(5, N - 1);
 		break;
 	// If you want a field with N biiger than 6 insert code to access them below.
 
@@ -164,10 +164,10 @@ int main()
 	viewer.callback_mouse_down = &mouse_down;
 	std::cout <<
 		// Input only supported up to 6. See key_down code if you wish to use N > 6
-		"  1-"<< N <<"     chose vector." << std::endl << 
+		"  1-"<< N <<"     Chose vector." << std::endl << 
 		"  R       Reset the constraints" << std::endl <<
 		"  N       Toggle field normalization" << std::endl <<
-		"  L-bttn  place constraint" << std::endl <<
+		"  L-bttn  Place constraint" << std::endl <<
 		"  D       Toggle constraint placement" << std::endl;
 
 	// Load mesh

@@ -14,7 +14,7 @@
 
 
 Eigen::VectorXi cIDs;
-Eigen::MatrixXi F, fieldF, meshF, TT;
+Eigen::MatrixXi F, fieldF, meshF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, representative, cValues;
 Eigen::MatrixXcd complex;
 igl::viewer::Viewer viewer;
@@ -34,13 +34,21 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 
 void draw_field()
 {
+	// Calculate the field
 	directional::complex_field(meshV, meshF, cIDs, cValues, N, complex);
+
+	// Convert it so it can be drawn
 	directional::complex_to_representative(meshV, meshF, complex, N, representative);
+
+	// Normalize if wanted
 	if (normalized)
 		representative.rowwise().normalize();
-	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
+
+	// Calculate the vectors, faces and colors of the field representation
+	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, 0, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
+	// Merge meshes
 	for (int i = 0; i < cIDs.rows(); i++)
 		meshC.row(cIDs(i)) = Eigen::RowVector3d(1, 0, 0);
 	
@@ -48,6 +56,8 @@ void draw_field()
 	C << meshC, fieldC;
 
 	ConcatMeshes(meshV, meshF, fieldV, fieldF, V, F);
+
+	// Update the viewer
 	viewer.data.clear();
 	viewer.data.set_face_based(true);
 	viewer.data.set_mesh(V, F);
@@ -60,17 +70,19 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	int borders;
 	switch (key)
 	{
-	case 'C':
-		draw_field();
-		break;
+	// Toggle field drawing for easier rotation
 	case 'D':
 		drag = !drag;
 		break;
+
+	// Reset the constraints
 	case 'R':
 		cIDs.resize(0);
 		cValues.resize(0, 6);
 		draw_field();
 		break;
+
+	// Toggle normalization
 	case 'N':
 		normalized = !normalized;
 		draw_field();
@@ -103,6 +115,8 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 			cIDs(i) = fid;
 			cValues.conservativeResize(cValues.rows() + 1, 3);
 		}
+
+		// Calculate direction from the center of the face to the mouse
 		cValues.row(i) = 
 			 (meshV.row(meshF(fid, 0)) * bc(0) + 
 			 meshV.row(meshF(fid, 1)) * bc(1) + 
@@ -120,9 +134,14 @@ int main()
 {
 	viewer.callback_key_down = &key_down;
 	viewer.callback_mouse_down = &mouse_down;
-	igl::readOBJ("../../data/torus.obj", meshV, meshF);
+	std::cout <<
+		"  R       Reset the constraints" << std::endl <<
+		"  N       Toggle field normalization" << std::endl <<
+		"  L-bttn  place constraint" << std::endl <<
+		"  D       Toggle constraint placement" << std::endl;
 
-	igl::triangle_triangle_adjacency(meshF, TT);
+	// Load mesh
+	igl::readOBJ("../../data/torus.obj", meshV, meshF);
 
 	cIDs.resize(0);
 	cValues.resize(0, 3);

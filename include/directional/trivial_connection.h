@@ -124,7 +124,6 @@ namespace directional
 	// Outputs:
 	//  adjustAngles: the difference between the parallel transport and the modified one.
 	//  error: gives the total error of the field. If this is not approximately 0 your singularities probably don't add up properly.
-	//TODO: work with boundaries
 	IGL_INLINE void trivial_connection(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycles,

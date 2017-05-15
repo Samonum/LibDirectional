@@ -19,7 +19,7 @@
 
 Eigen::MatrixXi F, fieldF, meshF, singF, EV, FE, EF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, norm, representative;
-Eigen::VectorXd adjustmentField, other;
+Eigen::VectorXd adjustmentField;
 Eigen::VectorXi match; 
 Eigen::VectorXd indices, calculatedIndices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
@@ -68,13 +68,12 @@ void draw_field()
 	std::cout << "error: " << e << std::endl;
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 	double r;
-	directional::representative_to_adjustment(meshV, meshF, EV, FE, EF, representative, N, other, r);
 
 	Eigen::VectorXi matching;
 	directional::principal_matching(meshV, meshF, EV, EF, FE, representative, N, matching);
 	directional::singularities(cycles, matching, calculatedIndices);
 
-	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, false, fieldV, fieldF, fieldC);
+	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, 0, fieldV, fieldF, fieldC);
 
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 	draw_singularities();

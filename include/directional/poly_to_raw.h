@@ -42,7 +42,8 @@ namespace directional
 			for (int i = 1; i < N; ++i)
 				M(i, i - 1) = std::complex<double>(1, 0);
 			M.col(N - 1) = -poly.row(f).transpose();
-			Eigen::MatrixXcd roots = M.eigenvalues();
+			Eigen::VectorXcd roots = M.eigenvalues();
+			std::sort(roots.data(), roots.data() + roots.size(), [](std::complex<double> a, std::complex<double> b){return a.real() * b.imag() > a.imag() * b.real();});
 			for (int i = 0; i < N; i++)
 			{
 				std::complex<double> root = roots(i);

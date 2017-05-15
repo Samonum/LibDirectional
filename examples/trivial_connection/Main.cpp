@@ -65,7 +65,7 @@ void calculate_field()
 	}
 
 	// Turn the field into a drawable mesh
-	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 1, 0), N, false, fieldV, fieldF, fieldC);
+	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 1, 0), N, directional::field_draw_flags::NONE, fieldV, fieldF, fieldC);
 }
 
 void draw_field()
