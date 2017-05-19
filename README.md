@@ -1,5 +1,23 @@
 # libdirectional
+Libdirectional is a C++ library for creating, manipulating and drawing vectorfields build on [libigl](www.github.com/libigl/libigl). 
 
+
+## Installation
+Libdirectional is a header only library where each file generally includes one function. To use the library simply add the _include_ directory to your include path and make sure libigl and its prerequisites are set up properly. After that you can include any files you need normally, using for example `#include <directional/trivial_field.h>`.
+
+To use the examples simply clone the repository using:
+```git
+git clone --recursive https://github.com/Samonum/libdirectional.git
+```
+
+Then open a shell in the folder containing the example you wish to run and call:
+```shell
+mkdir build
+cd build
+cmake ..
+```
+
+This should properly set up the example including all dependencies.
 
 
 ## Representations
@@ -41,7 +59,7 @@ The *Singularities* example shows how one can calculate singularities given a ve
 
 To speed up field calculations it is possible to pre-calculate the cycle holonomy using the `cycle_holonomy()` function. 
 
-To calculate the field LibDirectional uses the Eigen::SimplicialLDLT solver. This solver calculates the field in 2 steps, the first of which being solely dependant on the structure of the mesh, therefore it is possible to reuse this step as long as the mesh stays the same. To do so simply create a solver object and pass it into the `trivial_connection()` function.
+To calculate the field LibDirectional uses the `Eigen::SimplicialLDLT` solver. This solver calculates the field in 2 steps, the first of which being solely dependant on the structure of the mesh, therefore it is possible to reuse this step as long as the mesh stays the same. To do so simply create a solver object and pass it into the `trivial_connection()` function.
 
 ### Examples
 The *trivial_connection* example contains a small example program which allows picking basis cycles and altering their singularity index to see how this affects the field. 
@@ -86,9 +104,15 @@ Singularity calculations work the same way for fields generated from singulariti
 
 
 ## Complex Fields
-Also known as Globally Optimal or As Parallel As Possible tries to generate a field that is as smooth as possible given a set of user defined soft constraints in the form of example vectors. Unlike the Trivial Field vector sizes for the Complex Field do not need to be of the ame size.
+Also known as Globally Optimal or As Parallel As Possible tries to generate a field that is as smooth as possible given a set of user defined soft constraints in the form of example vectors. Unlike the Trivial Field vector sizes for the Complex Field do not need to be equal.
 
 ### Defining constraints
-Constraints are defined as a pair of matrices of equal hight, refered to as `soft_ids` and `soft_values`. `Soft_ids` is a 1 wide integer matrix containing the ids of the faces (index in the F matrix) on which the constraints are placed. Meanwhile `soft_values` contains the x, y and z values of the matching vector, representing it in the same way as the representative vectors. Constraints do not need to be of unit length, but their size does matterfor how they affect the field.
+Constraints are defined as a pair of matrices of equal hight, refered to as `soft_ids` and `soft_values`. `Soft_ids` is a 1 wide integer matrix containing the ids of the faces (index in the F matrix) on which the constraints are placed. Meanwhile `soft_values` contains the x, y and z values of the matching vector, representing it in the same way as the representative vectors. Constraints do not need to be of unit length, but their size does matter for how they affect the field.
+
+### Precomputing solver
+It is possible to speed up computations by precomputing the solver used to compute the complex field. This solver can then be reused to compute changes in the field as long as the mesh and **the ids of the constrained faces** remain the same.
+
+### Examples
+The *complex_field* example contains a small program which allows setting the soft constraints dynamically and see how it affects the field.
 
 
