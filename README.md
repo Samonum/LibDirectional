@@ -104,11 +104,6 @@ Libdirectional is able to calculate singularities for a given field using the `s
 
 Singularity calculations work the same way for fields generated from singularities using the Trivial Field method and for other fields that have not been created using singularities.
 
-### Examples
-```cpp
-//TODO
-```
-
 ## Complex Fields
 Also known as Globally Optimal or As Parallel As Possible tries to generate a field that is as smooth as possible given a set of user defined soft constraints in the form of example vectors. Unlike the Trivial Field vector sizes for the Complex Field do not need to be equal.
 
@@ -120,9 +115,6 @@ It is possible to speed up computations by precomputing the solver used to compu
 
 ### Examples
 The *complex_field* example contains a small program which allows setting the soft constraints dynamically and see how it affects the field.
-```cpp
-//TODO
-```
 
 
 ## Polyvector Field
@@ -137,9 +129,7 @@ It is possible to precompute the solvers for the Polyvector Field. To precompute
 The Solvers can be reused as long as the `soft_ids` remain the same, and must be properly `deleted` afterwards.
 
 ### Examples
-```cpp
-//TODO
-```
+The *poly_vectors* example shows the polyvector field in action, allowing the user to set constraints for each vector on each face individually.
 
 ## References
 <a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016
