@@ -134,10 +134,12 @@ soft_ids(0) = 0;
 // Set each matching row to the N vectors on that face
 soft_values << V.row(F(0,0)) - V.row(F(0,1));
     
-// Prepare the solver, must be recalculated whenever soft_ids changes
+// Prepare the solver, must be recalculated whenever soft_ids changes (optional)
 Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>> solver;
 Eigen::SparseMatrix<std::complex<double>> energy;
 Complex_field_prepare_solver(V, F, TT, B1, B2, soft_id, N, solver, energy);
+
+// Calculate the field
 complex_field(B1, B2, soft_id, soft_value, solver, energy, N, complex);
 ```
 
@@ -186,9 +188,9 @@ poly_vector(B1, B2, soft_ids, soft_values, solvers, energy, N, poly);
 
 // Make sure to properly dispose of all solvers
 for (std::vector< Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>* >::iterator it = solvers.begin(); it != solvers.end(); ++it)
-		{
-			delete (*it);
-		}
+{
+    delete (*it);
+}
 ```
 
 ## References
