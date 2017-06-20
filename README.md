@@ -116,6 +116,31 @@ It is possible to speed up computations by precomputing the solver used to compu
 ### Examples
 The *complex_field* example contains a small program which allows setting the soft constraints dynamically and see how it affects the field.
 
+The below code creates a field of degree 3 and sets the first face so that its first vector aligns with the first edge. The other vectors are equally spaced to create a 3-rosy. It also prepares the solver so it can be reused. V and F are the Vertices and Faces of the mesh. To see an example that alligns all vectors on the first face with an edge see the polyvector field example.
+```cpp
+//Degree of the field (number of vectors within each directional)
+int N = 3;
+
+Eigen::MatrixXi TT;
+igl::triangle_triangle_adjacency(F, TT);
+Eigen::MatrixXd B1, B2, x;
+igl::local_basis(V, F, B1, B2, x);
+    
+// Set constraints
+Eigen::VectorXi soft_ids(1);
+Eigen::MatrixXd soft_values(1, N*3);
+// Set to all faces that should be constrained
+soft_ids(0) = 0;
+// Set each matching row to the N vectors on that face
+soft_values << V.row(F(0,0)) - V.row(F(0,1));
+    
+// Prepare the solver, must be recalculated whenever soft_ids changes
+Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>> solver;
+Eigen::SparseMatrix<std::complex<double>> energy;
+Complex_field_prepare_solver(V, F, TT, B1, B2, soft_id, N, solver, energy);
+complex_field(B1, B2, soft_id, soft_value, solver, energy, N, complex);
+```
+
 
 ## Polyvector Field
 The Polyvector field is a generalisation of the standard complex field method, which allows defining each vector in a directional individually in both direction and length. Besides that it works largely the same way as the complex field.<sup>[5](#fn5)</sup> 
@@ -129,11 +154,46 @@ It is possible to precompute the solvers for the Polyvector Field. To precompute
 The Solvers can be reused as long as the `soft_ids` remain the same, and must be properly `deleted` afterwards.
 
 ### Examples
-The *poly_vectors* example shows the polyvector field in action, allowing the user to set constraints for each vector on each face individually.
+The *poly_vectors* example shows the polyvector field in action, allowing the user to set constraints for each vector on each face individually. 
+
+The below code creates a field of degree 3 and sets the first face so that its vectors eacg align with one edge of the triangle. It also prepares the solvers so they can be reused. V and F are the Vertices and Faces of the mesh.
+```cpp
+//Degree of the field (number of vectors within each directional)
+int N = 3;
+
+Eigen::MatrixXi TT;
+igl::triangle_triangle_adjacency(F, TT);
+Eigen::MatrixXd B1, B2, x;
+igl::local_basis(V, F, B1, B2, x);
+    
+// Set constraints
+Eigen::VectorXi soft_ids(1);
+Eigen::MatrixXd soft_values(1, N*3);
+// Set to all faces that should be constrained
+soft_ids(0) = 0;
+// Set each matching row to the N vectors on that face
+soft_values << V.row(F(0,0)) - V.row(F(0,1)), V.row(F(0,1)) - V.row(F(0,2)), V.row(F(0,2)) - V.row(F(0,0));
+    
+// Prepare the solvers, must be recalculated whenever soft_ids changes (optional)
+std::vector<Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>*> solvers;
+std::vector<Eigen::SparseMatrix<std::complex<double>>> energy;
+poly_vector_prepare_solvers(V, F, TT, B1, B2, soft_ids, N, solvers, energy);
+
+// Calculate the field
+poly_vector(B1, B2, soft_ids, soft_values, solvers, energy, N, poly);
+
+...
+
+// Make sure to properly dispose of all solvers
+for (std::vector< Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>* >::iterator it = solvers.begin(); it != solvers.end(); ++it)
+		{
+			delete (*it);
+		}
+```
 
 ## References
-<a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016
-<a name="fn2">2</a>: A. Vaxman et al., [Directional Field Synthesis, Design, and Processing](https://github.com/avaxman/DirectionalFieldSynthesis), 2016
-<a name="fn3">3</a>: A. Vaxman et al., [libhedra](https://github.com/avaxman/libhedra), 2016
-<a name="fn4">4</a>: K. Crane and M. Desbrun and P. Schr&ouml;der, [Trivial Connections on Discrete Surfaces](https://www.cs.cmu.edu/~kmcrane/Projects/TrivialConnections/), 2010
+<a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016<br>
+<a name="fn2">2</a>: A. Vaxman et al., [Directional Field Synthesis, Design, and Processing](https://github.com/avaxman/DirectionalFieldSynthesis), 2016<br>
+<a name="fn3">3</a>: A. Vaxman et al., [libhedra](https://github.com/avaxman/libhedra), 2016<br>
+<a name="fn4">4</a>: K. Crane and M. Desbrun and P. Schr&ouml;der, [Trivial Connections on Discrete Surfaces](https://www.cs.cmu.edu/~kmcrane/Projects/TrivialConnections/), 2010<br>
 <a name="fn5">5</a>: O. Diamanti et al., [Designing N-PolyVector Fields with Complex Polynomials](http://igl.ethz.ch/projects/complex-roots/n-polyvector-fields.pdf), 2014
