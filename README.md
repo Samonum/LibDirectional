@@ -1,5 +1,7 @@
 # libdirectional
-Libdirectional is a C++ library for creating, manipulating and drawing vectorfields build on [libigl](www.github.com/libigl/libigl). 
+Libdirectional is a C++ library for creating, manipulating and drawing vectorfields build on [libigl](www.github.com/libigl/libigl)<sup>[1](#fn1)</sup>. Libdirectional allows for n-rosy fields up to an arbitrary degree. Currently three types of vectorfields are supported, the trivial field, which attempts to create an as smooth as possible field given a set of singularities, the complex or globally optimal field, which tries to create a field that is as parallel as possible to a set of given example directionals and the polyvector field which generalizes the complex field to work for indepemdent 1<sup>n</sup> vector fields.
+
+Parts of the code are based on the 2016 SIGGRAPH course on [directional field design](https://github.com/avaxman/DirectionalFieldSynthesis)<sup>[2](#fn2)</sup>. Furthermore some code is borrowed from the [libhedra](https://github.com/avaxman/libhedra) library<sup>[3](#fn3)</sup>.
 
 
 ## Installation
@@ -26,7 +28,7 @@ Libdirectional uses several different representations to describe vector fields.
 
 | Method            | Representation                                                                                                            |
 |-------------------|---------------------------------------------------------------------------------------------------------------------------|
-| **Raw**               | \|F\| by 3\*\|N\| double matrix, representing each of the N vectors representing the full directional in the form X<sub>1</sub>, Y<sub>1</sub>, Z<sub>1</sub>, X<sub>2</sub>, Y<sub>2</sub>, Z<sub>2</sub> ... X<sub>N</sub>, Y<sub>N</sub>, Z<sub>N</sub>. Vectors are ordered in counter clockwise order.|
+| **Raw**               | \|F\| by 3\*N double matrix, representing each of the N vectors representing the full directional in the form X<sub>1</sub>, Y<sub>1</sub>, Z<sub>1</sub>, X<sub>2</sub>, Y<sub>2</sub>, Z<sub>2</sub> ... X<sub>N</sub>, Y<sub>N</sub>, Z<sub>N</sub>. Vectors are ordered in counter clockwise order.|
 | **Representative**    | \|F\| by 3 double matrix representing the first vector in a directional. Only available for N-rosies.|
 | **Adjustment** Angles | \|E\| by 1 double matrix representing the rotation between vectors on two neighbouring triangles, used in combination with a global rotation to uniquely define the field. Only available for N-rosies and does not encode vector length.|
 | **complex**           | \|F\| by 1 complex double matrix, used by the complex field method. Allows for different length N-rosies, as long as each vector within a rosy is of the same length.              |
@@ -41,7 +43,7 @@ For N-rosies you will most likely work primarily with the representative and adj
 
 The Trivial Field method attempts to create an as smooth as possible field covering the mesh. One of the main advantages of the trivial field is that generally all vectors in the field are of equal length.
 
-In order to create the field it is generally needed to assign certain points around which the field will circle or from where the field will diverge. Even when this is not necessary it might still be desired to do so in order to control the flow of the field. These singularities form the primary input of the algorithm needed to calculate the field along with the basis cycle matrix describing the possible locations for singularities.
+In order to create the field it is generally needed to assign certain points around which the field will circle or from where the field will diverge. Even when this is not necessary it might still be desired to do so in order to control the flow of the field. These singularities form the primary input of the algorithm needed to calculate the field along with the basis cycle matrix describing the possible locations for singularities.<sup>[4](#fn4)</sup>
 
 ### Basis Cycles
 
@@ -102,17 +104,46 @@ Libdirectional is able to calculate singularities for a given field using the `s
 
 Singularity calculations work the same way for fields generated from singularities using the Trivial Field method and for other fields that have not been created using singularities.
 
+### Examples
+```cpp
+//TODO
+```
 
 ## Complex Fields
 Also known as Globally Optimal or As Parallel As Possible tries to generate a field that is as smooth as possible given a set of user defined soft constraints in the form of example vectors. Unlike the Trivial Field vector sizes for the Complex Field do not need to be equal.
 
-### Defining constraints
+### Defining Constraints
 Constraints are defined as a pair of matrices of equal hight, refered to as `soft_ids` and `soft_values`. `Soft_ids` is a 1 wide integer matrix containing the ids of the faces (index in the F matrix) on which the constraints are placed. Meanwhile `soft_values` contains the x, y and z values of the matching vector, representing it in the same way as the representative vectors. Constraints do not need to be of unit length, but their size does matter for how they affect the field.
 
-### Precomputing solver
+### Precomputing Solver
 It is possible to speed up computations by precomputing the solver used to compute the complex field. This solver can then be reused to compute changes in the field as long as the mesh and **the ids of the constrained faces** remain the same.
 
 ### Examples
 The *complex_field* example contains a small program which allows setting the soft constraints dynamically and see how it affects the field.
+```cpp
+//TODO
+```
 
 
+## Polyvector Field
+The Polyvector field is a generalisation of the standard complex field method, which allows defining each vector in a directional individually in both direction and length. Besides that it works largely the same way as the complex field.<sup>[5](#fn5)</sup> 
+
+### Defining Constraints
+Just like the Complex Field, the Polyvector Field takes a `soft_ids` matrix defining the face indices and a matching `soft_values` matrix defining the directionals on the faces, however the polyvector `soft_values` matrix is 3\*N wide, containing the X, Y, and Z values for each individual vector.
+
+### Precomputing Solvers
+It is possible to precompute the solvers for the Polyvector Field. To precompute the solvers one should pass an empty vector of SimplicialLDLT pointers (`std::vector<Eigen::SimplicialLDLT<Eigen::SparseMatrix<std::complex<double>>>*>`) into the `poly_vector_prepare_solvers()` function before passing them along with the energy matrix to the `poly_vector()` method.
+
+The Solvers can be reused as long as the `soft_ids` remain the same, and must be properly `deleted` afterwards.
+
+### Examples
+```cpp
+//TODO
+```
+
+## References
+<a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016
+<a name="fn2">2</a>: A. Vaxman et al., [Directional Field Synthesis, Design, and Processing](https://github.com/avaxman/DirectionalFieldSynthesis), 2016
+<a name="fn3">3</a>: A. Vaxman et al., [libhedra](https://github.com/avaxman/libhedra), 2016
+<a name="fn4">4</a>: K. Crane and M. Desbrun and P. Schr&ouml;der, [Trivial Connections on Discrete Surfaces](https://www.cs.cmu.edu/~kmcrane/Projects/TrivialConnections/), 2010
+<a name="fn5">5</a>: O. Diamanti et al., [Designing N-PolyVector Fields with Complex Polynomials](http://igl.ethz.ch/projects/complex-roots/n-polyvector-fields.pdf), 2014
