@@ -80,11 +80,11 @@ namespace directional
 					++count;
 				}
 			}
-			double lambda = 10e6;
+			double lambda = 1000000000000;
 			for (int r = 0; r < soft_id.size(); ++r)
 			{
 				int f = soft_id(r);
-				t.push_back(Triplet<std::complex<double> >(count, f, sqrt(lambda)));
+				t.push_back(Triplet<std::complex<double> >(count, f, lambda));
 				++count;
 			}
 
@@ -138,7 +138,7 @@ namespace directional
 		int count = energy[0].rows() - soft_id.size();
 
 		// Convert the constraints into the complex polynomial coefficients and add them as soft constraints
-		double lambda = 10e6;
+		double lambda = 1000000000000;
 		for (int r = 0; r < soft_id.size(); ++r)
 		{
 			int f = soft_id(r);
@@ -151,9 +151,9 @@ namespace directional
 			}
 			Eigen::VectorXcd poly;
 			roots_to_monicPolynomial(roots, poly);
-			for (int i = 0; i < N; i++)
+			for (int n = 0; n < N; n++)
 			{
-				tb.push_back(Triplet<std::complex<double> >(count, i, poly(i) * std::complex<double>(sqrt(lambda), 0)));
+				tb.push_back(Triplet<std::complex<double> >(count, n, poly(n) * std::complex<double>(lambda, 0)));
 			}
 			++count;
 		}

@@ -102,9 +102,9 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	case 'W':
 		bool saved;
 		if (sing_mode)
-			saved = directional::write_trivial_field("../../data/test", meshV, meshF, calculatedIndices, N, 0);
+			saved = directional::write_trivial_field("../../data/field/trivial", meshV, meshF, calculatedIndices, N, 0);
 		else
-			saved = directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0);
+			saved = directional::write_trivial_field("../../data/field/trivial", meshV, meshF, indices, N, 0);
 		if (saved)
 			std::cout << "Saved mesh" << std::endl;
 		else
@@ -112,7 +112,7 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		break;
 	case 'R':
 		double x;
-		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
+		directional::read_trivial_field("../../data/field/trivial", meshV, meshF, indices, N, x);
 		update_mesh();
 		draw_field();
 		break;

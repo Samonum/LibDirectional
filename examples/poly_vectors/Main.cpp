@@ -17,7 +17,7 @@
 Eigen::VectorXi cIDs;
 Eigen::MatrixXi F, fieldF, meshF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, raw, cValues;
-Eigen::MatrixXcd complex;
+Eigen::MatrixXcd poly;
 igl::viewer::Viewer viewer;
 
 //Degree of the field
@@ -40,10 +40,10 @@ void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Ei
 void draw_field()
 {
 	// Compute the field
-	directional::poly_vector(meshV, meshF, cIDs, cValues, N, complex);
+	directional::poly_vector(meshV, meshF, cIDs, cValues, N, poly);
 	
 	// Convert it so it can be drawn
-	directional::poly_to_raw(meshV, meshF, complex, N, raw);
+	directional::poly_to_raw(meshV, meshF, poly, N, raw);
 	
 	// Normalize if wanted
 	if (normalized)
@@ -121,7 +121,7 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 //Select vertices using the mouse
 bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 {
-	if (drag || key != 0)
+	if (drag || (key != 0 && key != 2))
 		return false;
 	int fid;
 	Eigen::Vector3d bc;
@@ -132,6 +132,11 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	if (igl::unproject_onto_mesh(Eigen::Vector2f(x, y), viewer.core.view * viewer.core.model,
 		viewer.core.proj, viewer.core.viewport, meshV, meshF, fid, bc))
 	{
+		if (key == 2)
+		{
+			std::cout << poly.row(fid) << std::endl;
+			return true;
+		}
 		int i;
 		for (i = 0; i < cIDs.rows(); i++)
 			if (cIDs(i) == fid)

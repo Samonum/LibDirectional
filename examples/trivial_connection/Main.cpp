@@ -65,7 +65,7 @@ void calculate_field()
 	}
 
 	// Turn the field into a drawable mesh
-	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 1, 0), N, directional::field_draw_flags::NONE, fieldV, fieldF, fieldC);
+	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, directional::field_draw_flags::NONE, fieldV, fieldF, fieldC);
 }
 
 void draw_field()
@@ -174,14 +174,14 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 		}
 		break;
 	case 'W':
-		if (directional::write_trivial_field("../../data/test", meshV, meshF, indices, N, 0))
+		if (directional::write_trivial_field("../../data/field/trivial", meshV, meshF, indices, N, 0))
 			std::cout << "Saved mesh" << std::endl;
 		else
 			std::cout << "Unable to save mesh. Error: " << errno << std::endl;
 		break;
 	case 'R':
 		double x;
-		directional::read_trivial_field("../../data/test", meshV, meshF, indices, N, x);
+		directional::read_trivial_field("../../data/field/trivial", meshV, meshF, indices, N, x);
 		update_mesh();
 		calculate_field();
 		draw_field();
