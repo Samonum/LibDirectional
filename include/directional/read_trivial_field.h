@@ -20,11 +20,9 @@ namespace directional
 	//   singularities: The vector containing the singularities
 	//   N: The degree of the field
 	//   globalRotation: The angle of rotation between the vector on the first face and its basis in radians
-	//   round: Whether or not singularities should be rounded before saving. 
-	//          In most cases singularities should add up to whole integers.
 	// Return:
 	//   Whether or not the file was written successfully
-	bool IGL_INLINE write_singularities(const std::string &fileName, const Eigen::VectorXd &singularities, const int N, const double globalRotation, const bool round = true)
+	bool IGL_INLINE write_singularities(const std::string &fileName, const Eigen::VectorXi &singularities, const int N, const double globalRotation)
 	{
 		try
 		{
@@ -32,9 +30,8 @@ namespace directional
 			f << N << " " << singularities.size() << " " << globalRotation << std::endl;
 			for (int i = 0; i < singularities.rows(); i++)
 			{
-				double s = round ? std::round(singularities(i)) : singularities(i);
-				if (s)
-					f << i << " " << s << std::endl;
+				if (singularities(i))
+					f << i << " " << singularities(i) << std::endl;
 			}
 			f.close();
 			return !f.fail();
@@ -54,7 +51,7 @@ namespace directional
 	//   globalRotation: The angle of rotation between the vector on the first face and its basis in radians
 	// Return:
 	//   Whether or not the file was written successfully
-	bool IGL_INLINE read_singularities(const std::string &fileName, Eigen::VectorXd &singularities, int& N, double& globalRotation)
+	bool IGL_INLINE read_singularities(const std::string &fileName, Eigen::VectorXi &singularities, int& N, double& globalRotation)
 	{
 		try
 		{
@@ -64,7 +61,7 @@ namespace directional
 			f >> s;
 			f >> globalRotation;
 
-			singularities = Eigen::VectorXd::Zero(s);
+			singularities = Eigen::VectorXi::Zero(s);
 
 			while(f)
 			{
@@ -89,14 +86,12 @@ namespace directional
 	//   singularities: The vector containing the singularities
 	//   N: The degree of the field
 	//   globalRotation: The angle of rotation between the vector on the first face and its basis in radians
-	//   round: Whether or not singularities should be rounded before saving. 
-	//          In most cases singularities should add up to whole integers.
 	// Return:
 	//   Whether or not the file was written successfully
-	bool IGL_INLINE write_trivial_field(const std::string filename, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::VectorXd &singularities, const int N, const double globalRotation, const bool round = true)
+	bool IGL_INLINE write_trivial_field(const std::string filename, const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::VectorXi &singularities, const int N, const double globalRotation)
 	{
 		return igl::writeOFF(filename + ".off", V, F) &&
-			directional::write_singularities(filename + ".sing", singularities, N, globalRotation, round);
+			directional::write_singularities(filename + ".sing", singularities, N, globalRotation);
 	}
 
 	// Will search for a mesh file "mesh.off" and a singularity file "singularities.sing" in the given folder and loads their data.
@@ -109,7 +104,7 @@ namespace directional
 	//   N: The degree of the field
 	//   globalRotation: The angle of rotation between the vector on the first face and its basis in radians
 	//   Whether or not the file was written successfully
-	bool IGL_INLINE read_trivial_field(const std::string& filename, Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::VectorXd &singularities, int N, double globalRotation)
+	bool IGL_INLINE read_trivial_field(const std::string& filename, Eigen::MatrixXd& V, Eigen::MatrixXi& F, Eigen::VectorXi &singularities, int N, double globalRotation)
 	{
 		return igl::readOFF(filename + ".off", V, F) &&
 			directional::read_singularities(filename + ".sing", singularities, N, globalRotation);

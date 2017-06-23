@@ -21,7 +21,7 @@ Eigen::MatrixXi F, fieldF, meshF, singF, EV, FE, EF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, representative;
 Eigen::VectorXd adjustmentField, other;
 Eigen::VectorXi match; 
-Eigen::VectorXd indices;
+Eigen::VectorXi indices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 igl::viewer::Viewer viewer;
 
@@ -258,7 +258,7 @@ int main()
 	update_mesh();
 
 	//Initialize singularities, indices should add up to N * the Euler characteristic.
-	indices = Eigen::VectorXd::Zero(cycles.rows());
+	indices = Eigen::VectorXi::Zero(cycles.rows());
 	indices(290) = -N;
 
 	calculate_field();

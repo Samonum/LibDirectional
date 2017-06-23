@@ -27,7 +27,7 @@ namespace directional
 	//  fieldF: The faces of the field.
 	//  fieldC: The colors of  the field.
 	void IGL_INLINE draw_singularities(const Eigen::MatrixXd& V,
-		const Eigen::VectorXd& singularities,
+		const Eigen::VectorXi& singularities,
 		const Eigen::MatrixXd& positiveColors,
 		const Eigen::MatrixXd& negativeColors,
 		const double r,
@@ -38,7 +38,7 @@ namespace directional
 		std::vector<int> indices;
 		for (int i = 0; i < V.rows(); i++)
 		{
-			if (std::round(singularities(i)))
+			if (singularities(i))
 				indices.push_back(i);
 		}
 

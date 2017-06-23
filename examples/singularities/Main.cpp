@@ -7,7 +7,7 @@
 #include <directional/representative_to_adjustment.h>
 #include <directional/singularities.h>
 #include <directional/read_trivial_field.h>
-#include <directional/principal_matching.h>
+#include <directional/matching_effort.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -21,7 +21,7 @@ Eigen::MatrixXi F, fieldF, meshF, singF, EV, FE, EF;
 Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, norm, representative;
 Eigen::VectorXd adjustmentField;
 Eigen::VectorXi match; 
-Eigen::VectorXd indices, calculatedIndices;
+Eigen::VectorXi indices, calculatedIndices;
 Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 igl::viewer::Viewer viewer;
 
@@ -69,9 +69,9 @@ void draw_field()
 	directional::adjustment_to_representative(meshV, meshF, EV, EF, adjustmentField, N, 0, representative);
 	double r;
 
-	Eigen::VectorXi matching;
-	directional::principal_matching(meshV, meshF, EV, EF, FE, representative, N, matching);
-	directional::singularities(cycles, matching, calculatedIndices);
+	Eigen::VectorXd effort;
+	directional::matching_effort(meshV, meshF, EV, EF, FE, representative, N, effort);
+	directional::singularities(meshV, meshF, cycles, effort, N, calculatedIndices);
 
 	directional::drawable_field(meshV, meshF, representative, Eigen::RowVector3d(0, 0, 1), N, 0, fieldV, fieldF, fieldC);
 
@@ -146,7 +146,7 @@ int main()
 
 
 	update_mesh();
-	indices = Eigen::VectorXd::Zero(cycles.rows());
+	indices = Eigen::VectorXi::Zero(cycles.rows());
 	indices[220] = -N;
 	draw_field();
 	viewer.launch();
