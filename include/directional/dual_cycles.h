@@ -12,7 +12,7 @@
 #include <igl/setdiff.h>
 #include <igl/slice.h>
 #include <igl/unique.h>
-#include <igl/edge_flaps.h>
+#include <igl/edge_topology.h>
 #include <vector>
 #include <unordered_map>
 #include "tree.h"
@@ -209,8 +209,8 @@ namespace directional
 		Eigen::SparseMatrix<double, Eigen::RowMajor>& basisCycleMat
 	)
 	{
-		Eigen::MatrixXi EV, EF, x;
-		igl::edge_flaps(F, EV, x, EF, x);
+		Eigen::MatrixXi EV, x, EF;
+		igl::edge_topology(Eigen::MatrixXi(F.maxCoeff(), 0), F, EV, x, EF);
 		directional::dual_cycles(F, EV, EF, basisCycleMat);
 	}
 }

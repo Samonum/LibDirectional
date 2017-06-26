@@ -9,6 +9,7 @@
 #include <igl/gaussian_curvature.h>
 #include <igl/local_basis.h>
 #include <igl/triangle_triangle_adjacency.h>
+#include <igl/edge_topology.h>
 #include <directional/representative_to_raw.h>
 
 #include <Eigen/Core>
@@ -19,17 +20,16 @@
 namespace directional
 {
     // Takes a vector-set field, and calculates the matching effort between neighbouring vectors. Equal to the adjustment angles % 2PI/N for n-rosies.
+    // INPORTANT: if the vector field is not CCW ordered, the result in unpredictable
     // Inputs:
     //  V: #V by 3 vertex coordinates
     //  F: #F by 3 face vertex indices
     //  EV: #E by 2 edges to vertices indices
     //  EF: #E by 2 edges to faces indices
     //  raw: the vector field, assumed to be ordered CCW, and in xyzxyzxyz...xyz (3*N cols) form. The degree is inferred by the size.
-    //  INPORTANT: if the vector field is not CCW ordered, the result in unpredictable
     // Outputs:
     //  effort: #E matching efforts. One can compute singularity indices by a (properly aligned) d0 operator as (d0'*Effort+K)/(2*pi*N)
-    // note: in some (probably extreme) cases, matching vector to vector and taking the individual closest angles is not the actual effort, since it can break the order. That is, principal effort != every matching is shortest angle. For now, we disregard this, but this is TODO.
-	IGL_INLINE void matching_effort(const Eigen::MatrixXd& V,
+   IGL_INLINE void matching_effort(const Eigen::MatrixXd& V,
 		const Eigen::MatrixXi& F,
 		const Eigen::MatrixXi& EV,
 		const Eigen::MatrixXi& EF,
@@ -78,6 +78,7 @@ namespace directional
 	}
 
 	// Takes a vector-set field, and calculates the matching effort between neighbouring vectors. Equal to the adjustment angles % 2PI/N for n-rosies.
+	// INPORTANT: if the vector field is not CCW ordered, the result in unpredictable
 	// Inputs:
 	//   V: #V by 3 vertex coordinates
 	//   F: #F by 3 face vertex indices
@@ -100,6 +101,46 @@ namespace directional
 	{
 		Eigen::MatrixXd raw;
 		representative_to_raw(V, F, representativeField, N, raw);
+		matching_effort(V, F, EV, EF, FE, raw, effort);
+	}
+
+	// Takes a vector-set field, and calculates the matching effort between neighbouring vectors. Equal to the adjustment angles % 2PI/N for n-rosies.
+    // INPORTANT: if the vector field is not CCW ordered, the result in unpredictable
+	// Inputs:
+	//   V: #V by 3 vertex coordinates
+	//   F: #F by 3 face vertex indices
+	//   representative: #F by 3 values representing one vector for the n-rosy on each face
+	//   N: Degree of the field
+	// Outputs:
+	//   effort: #E matching efforts. One can compute singularity indices by a (properly aligned) d0 operator as (d0'*Effort+K)/(2*pi*N)
+	// note: in some (probably extreme) cases, matching vector to vector and taking the individual closest angles is not the actual effort, since it can break the order. That is, principal effort != every matching is shortest angle. For now, we disregard this, but this is TODO.
+	IGL_INLINE void matching_effort(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXd& representativeField,
+		const int N,
+		Eigen::VectorXd& effort)
+	{
+		Eigen::MatrixXi EV, FE, EF;
+		igl::edge_topology(V, F, EV, FE, EF);
+		matching_effort(V, F, EV, EF, FE, representativeField, N, effort);
+	}
+
+	// Takes a vector-set field, and calculates the matching effort between neighbouring vectors. Equal to the adjustment angles % 2PI/N for n-rosies.
+    // INPORTANT: if the vector field is not CCW ordered, the result in unpredictable
+	// Inputs:
+	//   V: #V by 3 vertex coordinates
+	//   F: #F by 3 face vertex indices
+    //   raw: the vector field, assumed to be ordered CCW, and in xyzxyzxyz...xyz (3*N cols) form. The degree is inferred by the size.
+	// Outputs:
+	//   effort: #E matching efforts. One can compute singularity indices by a (properly aligned) d0 operator as (d0'*Effort+K)/(2*pi*N)
+	// note: in some (probably extreme) cases, matching vector to vector and taking the individual closest angles is not the actual effort, since it can break the order. That is, principal effort != every matching is shortest angle. For now, we disregard this, but this is TODO.
+	IGL_INLINE void matching_effort(const Eigen::MatrixXd& V,
+		const Eigen::MatrixXi& F,
+		const Eigen::MatrixXd& raw,
+		Eigen::VectorXd& effort)
+	{
+		Eigen::MatrixXi EV, FE, EF;
+		igl::edge_topology(V, F, EV, FE, EF);
 		matching_effort(V, F, EV, EF, FE, raw, effort);
 	}
 }

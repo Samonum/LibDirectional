@@ -75,7 +75,6 @@ void draw_field()
 	directional::draw_cycles(EF, cycles, Eigen::Vector3d(1, 0, 0), ring1, meshC);
 
 	// Draw the Singularities
-	Eigen::MatrixXd spheres;
 	directional::draw_singularities(meshV, indices, positiveIndices, negativeIndices, .015, singV, singF, singC);
 
 	// Merge the cycle, singularities and mesh to be able to draw them
