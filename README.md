@@ -19,7 +19,7 @@ cd build
 cmake ..
 ```
 
-This should properly set up the example including all dependencies.
+This should properly set up the example including all dependencies upon which you can build it using your favourite compiler.
 
 
 ## Representations
@@ -120,7 +120,7 @@ trivial_connection(V, F, basisCycles, indices, cycleHolonomy, solver, N, adjustA
 ```
 
 ## Obtaining Singularities
-Libdirectional is able to calculate singularities for a given field using the `singularities()` method. Singularities can be calculated using either the principal matching (obtained by passing a representative or raw field into the `principle_matching()` function) or the adjustment angles. Singularity calculation suffers from sampling issues, so unless calculated using the original adjustment angles you will most likely not obtain the same singularities as used to create the field. 
+Libdirectional is able to calculate singularities for a given field using the `singularities()` method. Singularities can be calculated using either the principal matching (obtained by passing a representative or raw field into the `matching_energy()` function) or the adjustment angles. Singularity calculation suffers from sampling issues, so unless calculated using the original adjustment angles you will most likely not obtain the same singularities as used to create the field. 
 
 An illustration of these issues can be found in the *Singularities* example, which allows you to toggle between the original singularities and the calculated singularities. It is possible to save fields generated with the *trivial_connection* example and load them in the *singularities* example.
 
@@ -267,9 +267,16 @@ Finally it is possible to pass one color per vertexafter setting the `PER_VECTOR
 
 By default the size of each vector is set to be related to the average edge length, as well as the length of the actual vector. The base length and with can be manually set if needed. If you want all vectors to be equal in size you can scale them by normalizing each vector in the field matrix. 
 
+
+## Copyright
+
+2016 Sam de Redelijkheidand Amir Vaxman.
+
 ## References
 <a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016<br>
 <a name="fn2">2</a>: A. Vaxman et al., [Directional Field Synthesis, Design, and Processing](https://github.com/avaxman/DirectionalFieldSynthesis), 2016<br>
 <a name="fn3">3</a>: A. Vaxman et al., [libhedra](https://github.com/avaxman/libhedra), 2016<br>
 <a name="fn4">4</a>: K. Crane and M. Desbrun and P. Schr&ouml;der, [Trivial Connections on Discrete Surfaces](https://www.cs.cmu.edu/~kmcrane/Projects/TrivialConnections/), 2010<br>
 <a name="fn5">5</a>: O. Diamanti et al., [Designing N-PolyVector Fields with Complex Polynomials](http://igl.ethz.ch/projects/complex-roots/n-polyvector-fields.pdf), 2014
+
+
