@@ -37,7 +37,7 @@ namespace directional
 		Eigen::VectorXd unrounded = ((basisCycleMat * adjustAngles + cycleHolonomy).array() / (2.*igl::PI / N));
 		singularities.resize(unrounded.size());
 		for (int i = 0; i < unrounded.size(); i++)
-			singularities(i) = (int)round(unrounded(i)) % N;
+			singularities(i) = (int)round(unrounded(i));
 	}
 
 	// Computes a matrix containing the singularity values of all cycles

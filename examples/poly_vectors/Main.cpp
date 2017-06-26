@@ -5,6 +5,10 @@
 #include <directional/complex_to_raw.h>
 #include <directional/poly_to_raw.h>
 #include <directional/poly_vector.h>
+#include <directional/matching_effort.h>
+#include <directional/dual_cycles.h>
+#include <directional/singularities.h>
+#include <directional/draw_singularities.h>
 #include <Eigen/Core>
 #include <igl/viewer/Viewer.h>
 #include <igl/read_triangle_mesh.h>
@@ -15,10 +19,14 @@
 
 
 Eigen::VectorXi cIDs;
-Eigen::MatrixXi F, fieldF, meshF;
-Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, raw, cValues;
+Eigen::MatrixXi F, fieldF, meshF, singF;
+Eigen::MatrixXd V, C, meshV, meshC, fieldV, fieldC, singV, singC, raw, cValues;
 Eigen::MatrixXcd poly;
+Eigen::SparseMatrix<double, Eigen::RowMajor> cycles;
 igl::viewer::Viewer viewer;
+
+Eigen::MatrixXd positiveIndices(4, 3),
+negativeIndices(4, 3);
 
 //Degree of the field
 int N = 4;
@@ -28,6 +36,7 @@ int N = 4;
 int cur = 0;
 bool drag = false;
 bool normalized = false;
+bool showSing = false;
 
 void ConcatMeshes(const Eigen::MatrixXd &VA, const Eigen::MatrixXi &FA, const Eigen::MatrixXd &VB, const Eigen::MatrixXi &FB, Eigen::MatrixXd &V, Eigen::MatrixXi &F)
 {
@@ -54,14 +63,34 @@ void draw_field()
 	directional::drawable_field(meshV, meshF, raw, Eigen::RowVector3d(0,0,1), N, directional::field_draw_flags::NONE, fieldV, fieldF, fieldC);
 	meshC = Eigen::RowVector3d(1, 1, 1).replicate(meshF.rows(), 1);
 
-	// Merge all together
 	for (int i = 0; i < cIDs.rows(); i++)
 		meshC.row(cIDs(i)) = Eigen::RowVector3d(1, 0, 0);
-	
-	C.resize(meshC.rows() + fieldC.rows(), 3);
-	C << meshC, fieldC;
 
-	ConcatMeshes(meshV, meshF, fieldV, fieldF, V, F);
+	//Calculate the singularities
+	Eigen::VectorXi indices;
+	Eigen::VectorXd effort;
+	directional::matching_effort(meshV, meshF, raw, effort);
+
+	directional::singularities(meshV, meshF, cycles, effort, N, indices);
+
+	directional::draw_singularities(meshV, indices, positiveIndices, negativeIndices, .015, singV, singF, singC);
+
+	Eigen::MatrixXd a;
+	Eigen::MatrixXi b;
+	ConcatMeshes(meshV, meshF, fieldV, fieldF, a, b);
+	if (showSing && singF.size())
+	{
+		ConcatMeshes(a, b, singV, singF, V, F);
+		C.resize(F.rows(), 3);
+		C << meshC, fieldC, singC;
+	}
+	else
+	{
+		V = a;
+		F = b;
+		C.resize(F.rows(), 3);
+		C << meshC, fieldC;
+	}
 
 	// Update teh viewer
 	viewer.data.clear();
@@ -100,6 +129,12 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	// Toggle field drawing for easier rotation
 	case 'D':
 		drag = !drag;
+		break;
+
+		// Toggle singularities
+	case 'S':
+		showSing = !showSing;
+		draw_field();
 		break;
 
 	// Reset the constraints
@@ -203,14 +238,28 @@ int main()
 		"  N       Toggle field normalization" << std::endl <<
 		"  L-bttn  Place constraint pointing from the center of face to the cursor" << std::endl <<
 		"  R-bttn  Remove constraint" << std::endl <<
-		"  D       Toggle constraint placement" << std::endl;
+		"  D       Toggle constraint placement" << std::endl <<
+		"  S       Toggle singularities" << std::endl;
 
 	// Load mesh
 	igl::readOBJ("../../data/torus.obj", meshV, meshF);
 
+	// Set colors for Singularities
+	positiveIndices << .25, 0, 0,
+		.5, 0, 0,
+		.75, 0, 0,
+		1, 0, 0;
+
+	negativeIndices << 0, .25, 0,
+		0, .5, 0,
+		0, .75, 0,
+		0, 1, 0;
+
 	cIDs.resize(0);
 	cValues.resize(0, 3*N);
 
+	//Needed for singularity calculations
+	directional::dual_cycles(meshF, cycles);
 
 	draw_field();
 	viewer.launch();
