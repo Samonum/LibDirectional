@@ -270,7 +270,7 @@ By default the size of each vector is set to be related to the average edge leng
 
 ## Copyright
 
-2016 Sam de Redelijkheidand Amir Vaxman.
+2017 Sam de Redelijkheidand Amir Vaxman.
 
 ## References
 <a name="fn1">1</a>: A. Jacobson and D. Panozzo and others, [libigl: A simple C++ geometry processing library](http://libigl.github.io/libigl/), 2016<br>
