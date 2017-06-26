@@ -132,33 +132,62 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	if (igl::unproject_onto_mesh(Eigen::Vector2f(x, y), viewer.core.view * viewer.core.model,
 		viewer.core.proj, viewer.core.viewport, meshV, meshF, fid, bc))
 	{
+		//Remove constraint
 		if (key == 2)
 		{
-			std::cout << poly.row(fid) << std::endl;
+			int i;
+			for (i = 0; i < cIDs.rows(); i++)
+				if (cIDs(i) == fid)
+					break;
+			if (i == cIDs.rows())
+				return false;
+			cIDs(i) = cIDs(cIDs.size()-1);
+			cIDs.conservativeResize(cIDs.rows() - 1);
+			cValues.row(i) = cValues.row(cValues.rows() - 1);
+			cValues.conservativeResize(cValues.rows() - 1, 3 * N);
+			draw_field();
 			return true;
 		}
-		int i;
-		for (i = 0; i < cIDs.rows(); i++)
-			if (cIDs(i) == fid)
-				break;
-		if (i == cIDs.rows())
-		{
-			cIDs.conservativeResize(cIDs.rows() + 1);
-			cIDs(i) = fid;
-			cValues.conservativeResize(cValues.rows() + 1, 3*N);
-			cValues.row(i).fill(0);
-		}
 
-		// Calculate direction from the center of the face to the mouse
-		cValues.block<1, 3>(i, cur*3) =
-			 (meshV.row(meshF(fid, 0)) * bc(0) + 
-			 meshV.row(meshF(fid, 1)) * bc(1) + 
-			 meshV.row(meshF(fid, 2)) * bc(2) - 
-			(meshV.row(meshF(fid, 0)) + 
-				meshV.row(meshF(fid, 1)) + 
-				meshV.row(meshF(fid, 2))) / 3).normalized();
-		draw_field();
-		return true;
+		if (key == 0)
+		{
+			int i;
+			for (i = 0; i < cIDs.rows(); i++)
+				if (cIDs(i) == fid)
+					break;
+
+			// Calculate direction from the center of the face to the mouse
+			Eigen::RowVector3d rep =
+				(meshV.row(meshF(fid, 0)) * bc(0) +
+					meshV.row(meshF(fid, 1)) * bc(1) +
+					meshV.row(meshF(fid, 2)) * bc(2) -
+					(meshV.row(meshF(fid, 0)) +
+						meshV.row(meshF(fid, 1)) +
+						meshV.row(meshF(fid, 2))) / 3).normalized();
+
+			// Add new entry
+			if (i == cIDs.rows())
+			{
+				cIDs.conservativeResize(cIDs.rows() + 1);
+				cIDs(i) = fid;
+				cValues.conservativeResize(cValues.rows() + 1, 3 * N);
+
+				//Create n-rosy for initial constraint
+				Eigen::MatrixXd raw;
+				Eigen::MatrixXd norm = Eigen::RowVector3d(meshV.row(meshF(fid, 1)) - meshV.row(meshF(fid, 0))).cross(Eigen::RowVector3d(meshV.row(meshF(fid, 2)) - meshV.row(meshF(fid, 0)))).normalized();
+				directional::representative_to_raw(norm, rep, N, raw);
+				
+				// Rotate columns so first row is at current position and add them to the matrix
+				cValues.row(i) << raw.rightCols(N * 3 - cur * 3), raw.leftCols(cur * 3);
+				draw_field();
+				return true;
+			}
+
+			// Calculate direction from the center of the face to the mouse
+			cValues.block<1, 3>(i, cur * 3) = rep;
+			draw_field();
+			return true;
+		}
 	}
 	return false;
 };
@@ -172,7 +201,8 @@ int main()
 		"  1-"<< N <<"     Chose vector." << std::endl << 
 		"  R       Reset the constraints" << std::endl <<
 		"  N       Toggle field normalization" << std::endl <<
-		"  L-bttn  Place constraint" << std::endl <<
+		"  L-bttn  Place constraint pointing from the center of face to the cursor" << std::endl <<
+		"  R-bttn  Remove constraint" << std::endl <<
 		"  D       Toggle constraint placement" << std::endl;
 
 	// Load mesh

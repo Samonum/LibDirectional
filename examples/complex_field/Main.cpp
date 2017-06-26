@@ -94,7 +94,7 @@ bool key_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 //Select vertices using the mouse
 bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 {
-	if (drag || key != 0)
+	if (drag || (key != 0 && key != 2))
 		return false;
 	int fid;
 	Eigen::Vector3d bc;
@@ -105,6 +105,23 @@ bool mouse_down(igl::viewer::Viewer& viewer, int key, int modifiers)
 	if (igl::unproject_onto_mesh(Eigen::Vector2f(x, y), viewer.core.view * viewer.core.model,
 		viewer.core.proj, viewer.core.viewport, meshV, meshF, fid, bc))
 	{
+		//Remove constraint
+		if (key == 2)
+		{
+			int i;
+			for (i = 0; i < cIDs.rows(); i++)
+				if (cIDs(i) == fid)
+					break;
+			if (i == cIDs.rows())
+				return false;
+			cIDs(i) = cIDs(cIDs.size() - 1);
+			cIDs.conservativeResize(cIDs.rows() - 1);
+			cValues.row(i) = cValues.row(cValues.rows() - 1);
+			cValues.conservativeResize(cValues.rows() - 1, 3);
+			draw_field();
+			return true;
+		}
+
 		int i;
 		for (i = 0; i < cIDs.rows(); i++)
 			if (cIDs(i) == fid)
@@ -137,7 +154,7 @@ int main()
 	std::cout <<
 		"  R       Reset the constraints" << std::endl <<
 		"  N       Toggle field normalization" << std::endl <<
-		"  L-bttn  place constraint" << std::endl <<
+		"  L-bttn  place constraint pointing from the center of face to the cursor" << std::endl <<
 		"  D       Toggle constraint placement" << std::endl;
 
 	// Load mesh
