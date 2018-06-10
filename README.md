@@ -1,15 +1,15 @@
-# libdirectional
-Libdirectional is a C++ library for creating, manipulating and drawing vectorfields on 3D surfaces build on [libigl](www.github.com/libigl/libigl)<sup>[1](#fn1)</sup>. Libdirectional allows for n-rosy fields up to an arbitrary degree. Currently three types of vectorfields are supported, the trivial field, which attempts to create an as smooth as possible field given a set of singularities, the complex or globally optimal field, which tries to create a field that is as parallel as possible to a set of given example directionals and the polyvector field which generalizes the complex field to work for indepemdent 1<sup>n</sup> vector fields.
+# LibDirectional
+LibDirectional is a C++ library for creating, manipulating and drawing vectorfields on 3D surfaces build on [libigl](www.github.com/libigl/libigl)<sup>[1](#fn1)</sup>. LibDirectional allows for n-rosy fields up to an arbitrary degree. Currently three types of vectorfields are supported, the trivial field, which attempts to create an as smooth as possible field given a set of singularities, the complex or globally optimal field, which tries to create a field that is as parallel as possible to a set of given example directionals and the polyvector field which generalizes the complex field to work for indepemdent 1<sup>n</sup> vector fields.
 
 Parts of the code are based on the 2016 SIGGRAPH course on [directional field design](https://github.com/avaxman/DirectionalFieldSynthesis)<sup>[2](#fn2)</sup>. Furthermore some code is borrowed from the [libhedra](https://github.com/avaxman/libhedra) library<sup>[3](#fn3)</sup>.
 
 
 ## Installation
-Libdirectional is a header only library where each file generally includes one function. To use the library simply add the _include_ directory to your include path and make sure libigl and its prerequisites are set up properly. After that you can include any files you need normally, using for example `#include <directional/trivial_field.h>`.
+LibDirectional is a header only library where each file generally includes one function. To use the library simply add the _include_ directory to your include path and make sure libigl and its prerequisites are set up properly. After that you can include any files you need normally, using for example `#include <directional/trivial_field.h>`.
 
 To use the examples simply clone the repository using:
 ```git
-git clone --recursive https://github.com/Samonum/libdirectional.git
+git clone --recursive https://github.com/Samonum/LibDirectional.git
 ```
 
 Then open a shell in the folder containing the example you wish to run and call:
@@ -24,7 +24,7 @@ This should properly set up the example including all dependencies upon which yo
 
 ## Representations
 
-Libdirectional uses several different representations to describe vector fields.
+LibDirectional uses several different representations to describe vector fields.
 
 | Method            | Representation                                                                                                            |
 |-------------------|---------------------------------------------------------------------------------------------------------------------------|
@@ -34,7 +34,7 @@ Libdirectional uses several different representations to describe vector fields.
 | **complex**           | \|F\| by 1 complex double matrix, used by the complex field method. Allows for different length N-rosies, as long as each vector within a rosy is of the same length.              |
 | **poly**vector        | \|F\| by N complex double matrix. Polyvectors are represented as a complex polynomial which uniquely devines each vector individually. Because each vector in a polyvector is defined individually they can not be converted to representative or Adjustment angle form.|
 
-Libdirectional provides a number of conversion functions to switch between different forms of representation. Each of the functions is of the form \<method 1>\_to\_\<method 2>, where \<method 1> and \<method 2> are the bold parts of the method name in the above table in lower cacse. e.g. `adjustment_to_raw()`
+LibDirectional provides a number of conversion functions to switch between different forms of representation. Each of the functions is of the form \<method 1>\_to\_\<method 2>, where \<method 1> and \<method 2> are the bold parts of the method name in the above table in lower cacse. e.g. `adjustment_to_raw()`
 
 For N-rosies you will most likely work primarily with the representative and adjustment angle representation, using the more verbose raw representation mostly for drawing. As polyvectors can not be described using a single representative vector it is required more often to use their raw representation.
 
@@ -120,7 +120,7 @@ trivial_connection(V, F, basisCycles, indices, cycleHolonomy, solver, N, adjustA
 ```
 
 ## Obtaining Singularities
-Libdirectional is able to calculate singularities for a given field using the `singularities()` method. Singularities can be calculated using either the principal matching (obtained by passing a representative or raw field into the `matching_energy()` function) or the adjustment angles. Singularity calculation suffers from sampling issues, so unless calculated using the original adjustment angles you will most likely not obtain the same singularities as used to create the field. 
+LibDirectional is able to calculate singularities for a given field using the `singularities()` method. Singularities can be calculated using either the principal matching (obtained by passing a representative or raw field into the `matching_energy()` function) or the adjustment angles. Singularity calculation suffers from sampling issues, so unless calculated using the original adjustment angles you will most likely not obtain the same singularities as used to create the field. 
 
 An illustration of these issues can be found in the *Singularities* example, which allows you to toggle between the original singularities and the calculated singularities. It is possible to save fields generated with the *trivial_connection* example and load them in the *singularities* example.
 
