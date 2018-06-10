@@ -1,9 +1,9 @@
-# This version is no longer updated, for the latest version see: https://github.com/avaxman/libdirectional
-
-
-
-
-
+# This version is no longer updated, for the latest version see: https://github.com/avaxman/libdirectional  
+ 
+ <br><br><br><br><br><br>
+ 
+ 
+ 
 # LibDirectional
 LibDirectional is a C++ library for creating, manipulating and drawing vectorfields on 3D surfaces build on [libigl](www.github.com/libigl/libigl)<sup>[1](#fn1)</sup>. LibDirectional allows for n-rosy fields up to an arbitrary degree. Currently three types of vectorfields are supported, the trivial field, which attempts to create an as smooth as possible field given a set of singularities, the complex or globally optimal field, which tries to create a field that is as parallel as possible to a set of given example directionals and the polyvector field which generalizes the complex field to work for indepemdent 1<sup>n</sup> vector fields.
 
