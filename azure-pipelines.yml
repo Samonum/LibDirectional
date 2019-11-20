@@ -13,7 +13,7 @@ steps:
 
 - script: 
     echo gitting
-    git submodule sync --recursive
+    git submodule update --init --recursive
     git submodule foreach --recursive git pull origin master
     echo Please
     cd examples/$PROJECT
