@@ -10,7 +10,12 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+
+- script: |
+    cd examples/$PROJECT
+    mkdir build
+
 - task: CMake@1
   inputs:
-    workingDirectory: '$\examples\complex_field\build'
-    cmakeArgs: '$\examples\complex_field'
+    workingDirectory: '$\examples\$(project)\build'
+    cmakeArgs: '$\examples\$(project)'
