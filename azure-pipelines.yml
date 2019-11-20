@@ -12,8 +12,10 @@ pool:
 steps:
 
 - script: |
-    git submodule update --recursive
+    echo gitting
+    git submodule sync --recursive
     git submodule foreach --recursive git pull origin master
+    echo Please
     cd examples/$PROJECT
     mkdir build
 
