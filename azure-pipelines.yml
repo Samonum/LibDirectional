@@ -18,4 +18,4 @@ steps:
 - task: CMake@1
   inputs:
     workingDirectory: '$\examples\$(project)\build'
-    cmakeArgs: '$\examples\$(project)'
+    cmakeArgs: '..'
