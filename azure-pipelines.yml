@@ -10,10 +10,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- checkout: self
-  submodules: recursive
 
 - script: |
+    git submodule update
     cd examples/$PROJECT
     mkdir build
 
