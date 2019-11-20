@@ -18,5 +18,5 @@ steps:
 
 - task: CMake@1
   inputs:
-    workingDirectory: '$examples/$(project)/build'
+    workingDirectory: 'examples/$(project)/build'
     cmakeArgs: '..'
