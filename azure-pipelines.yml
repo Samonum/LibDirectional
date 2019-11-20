@@ -12,12 +12,8 @@ pool:
 steps:
 
 - script: 
-    echo gitting
     git submodule update --init --recursive
     git submodule foreach --recursive git pull origin master
-    echo Please
-    cd examples/$PROJECT
-    mkdir build
 
 - task: CMake@1
   inputs:
