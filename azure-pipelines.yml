@@ -11,10 +11,13 @@ pool:
 
 steps:
 
-- script: |
+- script: 
     git submodule update --recursive
-    git submodule foreach --recursive git pull origin master
   displayName: Get submodules
+
+- script: 
+    git submodule foreach --recursive git pull origin master
+  displayName: Pull submodules
 - task: CMake@1
   inputs:
     workingDirectory: 'examples/$(project)/build'
