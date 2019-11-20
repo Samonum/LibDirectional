@@ -21,3 +21,8 @@ steps:
   inputs:
     workingDirectory: 'examples/$(project)/build'
     cmakeArgs: '..'
+
+- task: PublishBuildArtifacts
+  inputs:
+    pathtoPublish: 'examples/$(project)/build'
+    artifactName: drop
