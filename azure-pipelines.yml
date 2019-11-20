@@ -12,7 +12,7 @@ pool:
 steps:
 
 - script: |
-    git submodule update
+    git submodule update --recursive
     cd examples/$PROJECT
     mkdir build
 
