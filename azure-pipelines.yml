@@ -13,7 +13,6 @@ steps:
 
 - script: 
     git submodule update --init --recursive
-    git submodule foreach --recursive git pull origin master
 
 - task: CMake@1
   inputs:
