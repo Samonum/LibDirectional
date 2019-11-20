@@ -10,7 +10,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-
+- checkout: self
+  submodules: true
+  
 - script: 
     git submodule update --recursive
   displayName: Get submodules
@@ -18,6 +20,7 @@ steps:
 - script: 
     git submodule foreach --recursive git pull origin master
   displayName: Pull submodules
+
 - task: CMake@1
   inputs:
     workingDirectory: 'examples/$(project)/build'
