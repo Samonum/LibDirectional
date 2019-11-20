@@ -11,7 +11,7 @@ pool:
 
 steps:
 
-- script: |
+- script: 
     echo gitting
     git submodule sync --recursive
     git submodule foreach --recursive git pull origin master
